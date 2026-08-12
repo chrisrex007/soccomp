@@ -1,0 +1,15 @@
+Name: <your name>
+Roll number: <your roll number>
+
+How to run:
+source .venv/bin/activate
+python "gen structure.py" cite-phy.elist
+python "gen centrality.py" cite-phy.elist
+
+Environment:
+Python version: 3.12.3
+Virtual environment: .venv
+
+Notes:
+- `python "gen structure.py" cite-phy.elist` takes ~1-2 minutes.
+- `python "gen centrality.py" cite-phy.elist` takes ~15-20 minutes (closeness, betweenness, eigenvector, pagerank).

@@ -12,8 +12,8 @@ How to run:
    pip install networkx matplotlib
 
 4. Run the scripts from the assignment folder:
-   python "gen structure.py" cite-phy.elist
-   python "gen centrality.py" cite-phy.elist
+   python gen_structure.py cite-phy.elist
+   python gen_centrality.py cite-phy.elist
 
 Environment:
 Python version: 3.12.3

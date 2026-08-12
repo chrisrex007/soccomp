@@ -18,7 +18,6 @@ Thumbs.db
 # Output / generated files
 plots/
 centralities/
-subgraphs/
 *.png
 *.pdf
 *.svg

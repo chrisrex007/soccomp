@@ -2,9 +2,18 @@ Name: <your name>
 Roll number: <your roll number>
 
 How to run:
-source .venv/bin/activate
-python "gen structure.py" cite-phy.elist
-python "gen centrality.py" cite-phy.elist
+1. Create a virtual environment in the project folder:
+   python3 -m venv .venv
+
+2. Activate it:
+   source .venv/bin/activate
+
+3. Install dependencies if needed:
+   pip install networkx matplotlib
+
+4. Run the scripts from the assignment folder:
+   python "gen structure.py" cite-phy.elist
+   python "gen centrality.py" cite-phy.elist
 
 Environment:
 Python version: 3.12.3

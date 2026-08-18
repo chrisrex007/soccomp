@@ -1,49 +1,36 @@
-"""Assignment 1 — Centrality metrics for the cit-HepTh subgraph.
-
-Computes closeness, betweenness, eigenvector, and biased PageRank
-centrality for every node.  All algorithms are hand-implemented
-(no NetworkX centrality built-ins).
-"""
-
-from __future__ import annotations
-
 import argparse
 import math
+import sys
 from collections import deque
 from pathlib import Path
 
 import networkx as nx
 
 
-# ---------------------------------------------------------------------------
-# Argument parsing and setup
-# ---------------------------------------------------------------------------
+DAMPING_FACTOR = 0.8
+MAX_ITERATIONS = 100
+PAGERANK_BIAS_DIVISOR = 3
+CONVERGENCE_TOLERANCE = 1.0e-12
 
-def parse_args() -> argparse.Namespace:
-    """Parse the subgraph filename from the command line."""
 
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("subgraph_name")
     return parser.parse_args()
 
 
-def ensure_output_directory() -> None:
-    """Create the centrality output directory."""
-
+def ensure_output_directory():
     Path("centralities").mkdir(exist_ok=True)
 
 
-# ---------------------------------------------------------------------------
-# Graph loading
-# ---------------------------------------------------------------------------
-
-def load_subgraph(subgraph_name: str) -> nx.Graph:
-    """Load the edge list from subgraphs/<subgraph_name> and return an
-    undirected NetworkX graph."""
+# The edge list is directed, so reverse pairs collapse into one undirected
+# edge; self loops are dropped as they mean nothing here.
+def load_subgraph(subgraph_name):
+    filepath = Path("subgraphs") / subgraph_name
+    if not filepath.exists():
+        sys.exit(f"error: edge list not found at {filepath}")
 
     graph = nx.Graph()
-    filepath = Path("subgraphs") / subgraph_name
-
     with open(filepath, "r") as f:
         for line in f:
             line = line.strip()
@@ -58,262 +45,181 @@ def load_subgraph(subgraph_name: str) -> nx.Graph:
     return graph
 
 
-# ---------------------------------------------------------------------------
-# BFS helper used by closeness and betweenness
-# ---------------------------------------------------------------------------
+# Plain lists are a lot faster to walk than the NetworkX neighbour views,
+# and we do one search per node below.
+def build_adjacency(graph):
+    return {node: list(graph.neighbors(node)) for node in graph.nodes()}
 
-def _bfs_shortest_paths(graph: nx.Graph, source):
-    """BFS from *source*.
 
-    Returns
-    -------
-    dist : dict[node, int]
-        Shortest-path distance from *source* to every reachable node.
-    num_paths : dict[node, int]
-        Number of shortest paths from *source* to every reachable node.
-    predecessors : dict[node, list[node]]
-        Predecessor list on the shortest-path DAG.
-    order : list[node]
-        Nodes in BFS discovery order (used for back-propagation).
-    """
+def bfs_distances(adjacency, source):
+    dist = {source: 0}
+    queue = deque([source])
+    while queue:
+        u = queue.popleft()
+        for v in adjacency[u]:
+            if v not in dist:
+                dist[v] = dist[u] + 1
+                queue.append(v)
+    return dist
 
-    dist: dict = {source: 0}
-    num_paths: dict = {source: 1}
-    predecessors: dict = {source: []}
-    order: list = []
+
+# Same as above but also records how many shortest paths reach each node,
+# their parents on the shortest path DAG, and the visit order.
+def bfs_shortest_path_dag(adjacency, source):
+    dist = {source: 0}
+    num_paths = {source: 1}
+    predecessors = {source: []}
+    order = []
     queue = deque([source])
 
     while queue:
         u = queue.popleft()
         order.append(u)
-        for v in graph.neighbors(u):
-            # First visit — tree edge.
+        for v in adjacency[u]:
             if v not in dist:
                 dist[v] = dist[u] + 1
                 num_paths[v] = num_paths[u]
                 predecessors[v] = [u]
                 queue.append(v)
             elif dist[v] == dist[u] + 1:
-                # Another shortest path found.
                 num_paths[v] += num_paths[u]
                 predecessors[v].append(u)
 
-    return dist, num_paths, predecessors, order
+    return num_paths, predecessors, order
 
 
-# ---------------------------------------------------------------------------
-# 1. Closeness centrality
-# ---------------------------------------------------------------------------
+# C_i = (n - 1) / sum_j d_ij.  The graph is not connected, so pairs in
+# different components simply do not contribute to the sum.
+def compute_closeness(graph):
+    adjacency = build_adjacency(graph)
+    n = graph.number_of_nodes()
+    closeness = {}
 
-def compute_closeness(graph: nx.Graph) -> dict:
-    """Compute closeness centrality C_i = 1 / sum(d_ij) for each node.
-
-    Nodes that cannot reach any other node receive a centrality of 0.
-    """
-
-    closeness: dict = {}
-
-    for node in graph.nodes():
-        dist, _, _, _ = _bfs_shortest_paths(graph, node)
-        total_dist = sum(dist.values())  # includes dist[node]=0
-        if total_dist > 0:
-            closeness[node] = 1.0 / total_dist
+    for node in adjacency:
+        total_distance = sum(bfs_distances(adjacency, node).values())
+        if total_distance > 0:
+            closeness[node] = (n - 1) / total_distance
         else:
             closeness[node] = 0.0
 
     return closeness
 
 
-# ---------------------------------------------------------------------------
-# 2. Betweenness centrality  (Brandes' algorithm)
-# ---------------------------------------------------------------------------
-
-def compute_betweenness(graph: nx.Graph) -> dict:
-    """Compute betweenness centrality using Brandes' algorithm.
-
-    B_i = 2/((n-1)(n-2)) * sum_{s,t} (n_i^{st} / g_{st})
-    """
-
+# Brandes' algorithm.  Every unordered pair is walked once from each end,
+# so the accumulated sum is halved before the 2/((n-1)(n-2)) factor.
+def compute_betweenness(graph):
+    adjacency = build_adjacency(graph)
     n = graph.number_of_nodes()
-    betweenness: dict = {node: 0.0 for node in graph.nodes()}
+    betweenness = {node: 0.0 for node in adjacency}
 
-    for s in graph.nodes():
-        dist, num_paths, predecessors, order = _bfs_shortest_paths(graph, s)
+    for source in adjacency:
+        num_paths, predecessors, order = bfs_shortest_path_dag(adjacency, source)
 
-        # Back-propagation of pair dependencies.
-        delta: dict = {node: 0.0 for node in graph.nodes()}
-
-        # Process nodes in reverse BFS order (farthest first).
+        delta = {node: 0.0 for node in order}
         for w in reversed(order):
-            for pred in predecessors.get(w, []):
-                # Fraction of shortest paths through pred.
+            for pred in predecessors[w]:
                 delta[pred] += (num_paths[pred] / num_paths[w]) * (1.0 + delta[w])
-            if w != s:
+            if w != source:
                 betweenness[w] += delta[w]
 
-    # Normalisation for undirected graph: each pair (s,t) counted twice,
-    # and formula has factor 2/((n-1)(n-2)).
-    # Brandes counts each pair once from each direction, so raw sum is
-    # already double-counted.  Divide by 2 then apply the formula factor.
-    norm = (n - 1) * (n - 2)
-    if norm > 0:
+    pair_count = (n - 1) * (n - 2)
+    if pair_count > 0:
         for node in betweenness:
-            # Raw sum from Brandes is sum over all sources s of delta_s(v),
-            # which double-counts because (s->t) and (t->s) are both visited.
-            # For undirected graphs, divide by 2 first.
-            betweenness[node] = (2.0 / norm) * (betweenness[node] / 2.0)
+            betweenness[node] = (2.0 / pair_count) * (betweenness[node] / 2.0)
 
     return betweenness
 
 
-# ---------------------------------------------------------------------------
-# 3. Eigenvector centrality  (power iteration)
-# ---------------------------------------------------------------------------
-
-def compute_eigenvector(graph: nx.Graph) -> dict:
-    """Compute eigenvector centrality via power iteration (up to 100 iters).
-
-    x_i = (1/lambda) * sum_j A_ij * x_j
-    """
-
-    nodes = list(graph.nodes())
-    n = len(nodes)
+# Power iteration for x_i = (1/lambda) * sum_j A_ij x_j.  The assignment
+# fixes no scale, so the result is normalised to unit Euclidean length.
+def compute_eigenvector(graph):
+    adjacency = build_adjacency(graph)
+    n = len(adjacency)
     if n == 0:
         return {}
 
-    # Initialise with uniform values.
-    x: dict = {node: 1.0 / n for node in nodes}
+    x = {node: 1.0 / n for node in adjacency}
 
-    for _ in range(100):
-        x_new: dict = {}
-        for node in nodes:
-            x_new[node] = sum(x[nbr] for nbr in graph.neighbors(node))
+    for _ in range(MAX_ITERATIONS):
+        x_next = {
+            node: sum(x[neighbour] for neighbour in neighbours)
+            for node, neighbours in adjacency.items()
+        }
 
-        # Normalise by the largest value (approximates dividing by lambda).
-        max_val = max(abs(v) for v in x_new.values())
-        if max_val == 0:
+        norm = math.sqrt(sum(value * value for value in x_next.values()))
+        if norm == 0:
             break
-        for node in nodes:
-            x_new[node] /= max_val
+        for node in x_next:
+            x_next[node] /= norm
 
-        # Check convergence.
-        diff = sum(abs(x_new[node] - x[node]) for node in nodes)
-        x = x_new
-        if diff < 1e-10:
+        change = sum(abs(x_next[node] - x[node]) for node in adjacency)
+        x = x_next
+        if change < n * CONVERGENCE_TOLERANCE:
             break
 
     return x
 
 
-# ---------------------------------------------------------------------------
-# 4. Biased PageRank  (power iteration, alpha=0.8)
-# ---------------------------------------------------------------------------
+# All of the teleport mass goes to the nodes whose id divides by 3, shared
+# equally.  Falls back to uniform if no node qualifies.
+def build_preference_vector(nodes):
+    biased = [node for node in nodes if node % PAGERANK_BIAS_DIVISOR == 0]
+    if not biased:
+        return {node: 1.0 / len(nodes) for node in nodes}
 
-def compute_pagerank(graph: nx.Graph) -> dict:
-    """Compute biased PageRank with damping alpha=0.8 and preference vector
-    biased towards nodes with IDs divisible by 3.  Up to 100 iterations.
-    """
+    weight = 1.0 / len(biased)
+    return {node: (weight if node % PAGERANK_BIAS_DIVISOR == 0 else 0.0)
+            for node in nodes}
 
-    alpha = 0.8
-    nodes = list(graph.nodes())
+
+# Biased PageRank by power iteration.  Nothing loaded from an edge list is
+# dangling, so no rank leaks away.
+def compute_pagerank(graph):
+    adjacency = build_adjacency(graph)
+    nodes = list(adjacency)
     n = len(nodes)
     if n == 0:
         return {}
 
-    # Preference vector: higher weight for nodes whose ID is divisible by 3.
-    pref: dict = {}
-    for node in nodes:
-        if node % 3 == 0:
-            pref[node] = 1.0
-        else:
-            pref[node] = 0.0
+    preference = build_preference_vector(nodes)
+    degree = {node: len(neighbours) for node, neighbours in adjacency.items()}
+    rank = {node: 1.0 / n for node in nodes}
 
-    # If no nodes are divisible by 3, fall back to uniform.
-    pref_sum = sum(pref.values())
-    if pref_sum == 0:
-        pref = {node: 1.0 / n for node in nodes}
-    else:
-        for node in nodes:
-            pref[node] /= pref_sum
+    for _ in range(MAX_ITERATIONS):
+        rank_next = {}
+        for node, neighbours in adjacency.items():
+            incoming = sum(rank[nbr] / degree[nbr] for nbr in neighbours)
+            rank_next[node] = (
+                DAMPING_FACTOR * incoming
+                + (1.0 - DAMPING_FACTOR) * preference[node]
+            )
 
-    # Initialise PageRank uniformly.
-    pr: dict = {node: 1.0 / n for node in nodes}
-
-    for _ in range(100):
-        pr_new: dict = {}
-
-        # Dangling node mass (nodes with no neighbours).
-        dangling_sum = sum(pr[node] for node in nodes if graph.degree(node) == 0)
-
-        for node in nodes:
-            # Contribution from incoming neighbours.
-            rank_sum = sum(pr[nbr] / graph.degree(nbr) for nbr in graph.neighbors(node))
-            # Add dangling mass distributed proportionally to preference.
-            rank_sum += dangling_sum * pref[node]
-            pr_new[node] = alpha * rank_sum + (1.0 - alpha) * pref[node]
-
-        # Normalise to ensure probabilities sum to 1.
-        total = sum(pr_new.values())
-        if total > 0:
-            for node in nodes:
-                pr_new[node] /= total
-
-        # Check convergence.
-        diff = sum(abs(pr_new[node] - pr[node]) for node in nodes)
-        pr = pr_new
-        if diff < 1e-10:
+        change = sum(abs(rank_next[node] - rank[node]) for node in nodes)
+        rank = rank_next
+        if change < n * CONVERGENCE_TOLERANCE:
             break
 
-    return pr
+    return rank
 
 
-# ---------------------------------------------------------------------------
-# Output
-# ---------------------------------------------------------------------------
-
-def write_scores(filename: str, scores: dict) -> None:
-    """Write centrality scores to centralities/<filename>.
-
-    Nodes are sorted by centrality value (highest first).
-    Values are rounded to 6 decimal places.
-    """
-
-    outpath = Path("centralities") / filename
-    # Sort descending by score, break ties by node id ascending.
-    sorted_scores = sorted(scores.items(), key=lambda kv: (-kv[1], kv[0]))
-
-    with open(outpath, "w") as f:
-        for node, score in sorted_scores:
+# Highest score first, ties broken by node id so the file is reproducible.
+def write_scores(filename, scores):
+    ordered = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
+    with open(Path("centralities") / filename, "w") as f:
+        for node, score in ordered:
             f.write(f"{node} {score:.6f}\n")
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-def main() -> None:
+def main():
     args = parse_args()
     ensure_output_directory()
 
     graph = load_subgraph(args.subgraph_name)
 
-    print("Computing closeness centrality...")
     write_scores("closeness.txt", compute_closeness(graph))
-    print("  closeness.txt written.")
-
-    print("Computing betweenness centrality...")
     write_scores("betweenness.txt", compute_betweenness(graph))
-    print("  betweenness.txt written.")
-
-    print("Computing eigenvector centrality...")
     write_scores("eigenvector.txt", compute_eigenvector(graph))
-    print("  eigenvector.txt written.")
-
-    print("Computing biased PageRank...")
     write_scores("pagerank.txt", compute_pagerank(graph))
-    print("  pagerank.txt written.")
-
-    print("All centrality computations complete.")
 
 
 if __name__ == "__main__":

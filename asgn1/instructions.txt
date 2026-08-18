@@ -1,24 +1,82 @@
-Name: <your name>
-Roll number: <your roll number>
+Social Computing [CS60017] 2026 -- Assignment 1: Network Analysis
 
-How to run:
-1. Create a virtual environment in the project folder:
-   python3 -m venv .venv
+Name        : Krish Charniya
+Roll number : 23CS10012
 
-2. Activate it:
-   source .venv/bin/activate
 
-3. Install dependencies if needed:
-   pip install networkx matplotlib
+ENVIRONMENT
+-----------
+Python 3.12.3, with networkx 3.6.1 and matplotlib 3.11.1:
 
-4. Run the scripts from the assignment folder:
-   python gen_structure.py cite-phy.elist
-   python gen_centrality.py cite-phy.elist
+    pip install networkx matplotlib
 
-Environment:
-Python version: 3.12.3
-Virtual environment: .venv
 
-Notes:
-- `python "gen structure.py" cite-phy.elist` takes ~1-2 minutes.
-- `python "gen centrality.py" cite-phy.elist` takes ~15-20 minutes (closeness, betweenness, eigenvector, pagerank).
+HOW TO RUN
+----------
+Run everything from the top level of this folder so that subgraphs/,
+plots/ and centralities/ resolve correctly.
+
+1. Building the subgraph (already done, the edge list is included)
+
+   extract_subgraph.py reads the raw SNAP file and keeps only the edges
+   whose endpoints are both odd, i.e. it removes every node whose id is
+   divisible by 2.  To rebuild it, download cit-HepTh.txt.gz from
+
+       https://snap.stanford.edu/data/cit-HepTh.html
+
+   uncompress it into subgraphs/cit-HepTh.txt, and run:
+
+       python extract_subgraph.py
+
+   As required, the original dataset is not part of this submission,
+   only the extracted subgraph.
+
+2. Structural metrics (TASK 1)
+
+       python gen_structure.py cite-phy.elist
+
+   Prints the required lines and writes deg_dist, shortest_path,
+   connected_comp and clustering_coeff plots into plots/.
+
+3. Centrality metrics (TASK 2)
+
+       python gen_centrality.py cite-phy.elist
+
+   Writes closeness.txt, betweenness.txt, eigenvector.txt and
+   pagerank.txt into centralities/.  It prints nothing.
+
+
+RUNNING TIME
+------------
+gen_structure.py takes about 4 min 40 s and gen_centrality.py about
+13 min, on 16 cores and 8 GB RAM.  Peak memory is under 150 MB.
+gen_centrality.py is the slow one: closeness and betweenness each need
+one breadth first search per node, so 13295 searches apiece.
+
+
+NOTES
+-----
+- All four centralities are implemented from scratch.  NetworkX only
+  provides the graph container, plus the standard structural routines in
+  TASK 1.
+
+- The subgraph is read as undirected, so a pair of reverse edges becomes
+  one edge and the 25 self loop lines are dropped.  This gives 13295
+  nodes and 89709 edges.
+
+- Closeness is (n-1) / sum_j d_ij with n the node count of the whole
+  graph.  There are 165 components, so d_ij does not exist for pairs in
+  different ones and those pairs are left out of the sum.  One
+  consequence: the 123 components of size 2 give their nodes a distance
+  sum of 1 and therefore the largest possible score, so they sit at the
+  top of closeness.txt ahead of the hubs of the giant component.
+
+- The PageRank preference vector puts all of its mass on the nodes whose
+  id is divisible by 3 (4417 of the 13295), shared equally, and zero
+  elsewhere.  Damping factor 0.8, capped at 100 iterations.
+
+- The assignment fixes no scale for the eigenvector, so it is normalised
+  to unit Euclidean length.
+
+- Both scripts use a fixed random seed, so the sampled diameters and the
+  randomly picked node match the plots submitted here.

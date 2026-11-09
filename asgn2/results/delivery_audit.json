@@ -1,0 +1,98 @@
+{
+  "passed": true,
+  "dataset_sha256": "f41c026ed8af3cc3359f1ca5573d0605fb09ae0eefa34544b820fd8c6e2ef296",
+  "delivery_experiment_hash": "1a9c6907538c45d4e0a2b5aac7e9c914a671fbd6644ab45b922a2f996c6cf64f",
+  "report_sha256": "2cb43d884ca6207cf807e5a9d588fb593b2c86fe5fe969c3462088ba528552cc",
+  "comparison_rows": 36,
+  "groundtruth_comparison_rows": 32,
+  "trajectory_checks": [
+    {
+      "scenario": "U_max",
+      "method": "fast",
+      "final_trajectories_verified": 1,
+      "max_f_error": 4.092726157978177e-12
+    },
+    {
+      "scenario": "U_max",
+      "method": "I",
+      "final_trajectories_verified": 1,
+      "max_f_error": 0.0
+    },
+    {
+      "scenario": "U_max",
+      "method": "II",
+      "final_trajectories_verified": 1,
+      "max_f_error": 0.0
+    },
+    {
+      "scenario": "U_max",
+      "method": "random",
+      "final_trajectories_verified": 20,
+      "max_f_error": 9.322320693172514e-12
+    },
+    {
+      "scenario": "P_max",
+      "method": "fast",
+      "final_trajectories_verified": 1,
+      "max_f_error": 1.8189894035458565e-12
+    },
+    {
+      "scenario": "P_max",
+      "method": "I",
+      "final_trajectories_verified": 1,
+      "max_f_error": 0.0
+    },
+    {
+      "scenario": "P_max",
+      "method": "II",
+      "final_trajectories_verified": 1,
+      "max_f_error": 0.0
+    },
+    {
+      "scenario": "P_max",
+      "method": "random",
+      "final_trajectories_verified": 20,
+      "max_f_error": 1.7280399333685637e-11
+    },
+    {
+      "scenario": "U_min",
+      "method": "fast",
+      "final_trajectories_verified": 1,
+      "max_f_error": 4.092726157978177e-12
+    },
+    {
+      "scenario": "U_min",
+      "method": "I",
+      "final_trajectories_verified": 1,
+      "max_f_error": 0.0
+    },
+    {
+      "scenario": "U_min",
+      "method": "II",
+      "final_trajectories_verified": 1,
+      "max_f_error": 0.0
+    },
+    {
+      "scenario": "U_min",
+      "method": "random",
+      "final_trajectories_verified": 20,
+      "max_f_error": 1.5234036254696548e-11
+    }
+  ],
+  "small_graph_suite_passed": true,
+  "all_five_cli_help_checks_passed": true,
+  "archive_extraction_small_suite_and_facebook_equilibrium_passed": true,
+  "report_first_line_checked": "23CS10012",
+  "report_visual_checks": [
+    "objective plot with zoom",
+    "comparison table"
+  ],
+  "archive_required_files": [
+    "Assignment2_23CS10012_greedy_task1.py",
+    "Assignment2_23CS10012_paper_task2.py",
+    "Assignment2_23CS10012_groundtruth_task3.py",
+    "Assignment2_23CS10012_analysis_task4.py",
+    "Assignment2_23CS10012_bonus_task4.py",
+    "Assignment2_23CS10012_report.pdf"
+  ]
+}

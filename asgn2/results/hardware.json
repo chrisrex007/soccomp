@@ -1,0 +1,8 @@
+{
+  "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+  "available_cpus": 5,
+  "affinity_cpus": 5,
+  "cpu_quota": "400000 100000",
+  "memory_max": "34359738368",
+  "threads_per_worker": 1
+}

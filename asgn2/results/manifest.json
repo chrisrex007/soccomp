@@ -1,0 +1,33 @@
+{
+  "dataset_sha256": "f41c026ed8af3cc3359f1ca5573d0605fb09ae0eefa34544b820fd8c6e2ef296",
+  "nodes": 4039,
+  "edges": 88234,
+  "components": 1,
+  "raw_lines": 88234,
+  "removed_loops": 0,
+  "collapsed_duplicates": 0,
+  "seed": 2026,
+  "streams": {
+    "alpha": 0,
+    "U": 1,
+    "P": 2,
+    "random": "1000 + pool_code*100 + trial",
+    "pgd": 3000
+  },
+  "python": "3.12.14",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "networkx": "3.6.1",
+  "pandas": "3.1.1",
+  "matplotlib": "3.11.1",
+  "machine": "x86_64",
+  "processor": "",
+  "cpus": 5,
+  "threads": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "experiment_hash": "1a9c6907538c45d4e0a2b5aac7e9c914a671fbd6644ab45b922a2f996c6cf64f",
+  "execution_experiment_hash": "759dba774c1bfa52818c85310e770bc957da038ade81afb021044c649950c48a"
+}

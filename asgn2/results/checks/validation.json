@@ -1,0 +1,370 @@
+{
+  "passed": true,
+  "graphs": [
+    {
+      "nodes": 6,
+      "edges": 5,
+      "gradient_error": 2.3160535989052988e-11,
+      "iteration_steps": 46,
+      "naive_fast_match": true,
+      "pgd": [
+        {
+          "direction": 1,
+          "start": 0,
+          "f": 5.693522714274982,
+          "exact": 5.6935227142750024,
+          "gap": 2.042810365310288e-14,
+          "iterations": 19,
+          "status": "reference_certified"
+        },
+        {
+          "direction": 1,
+          "start": 1,
+          "f": 5.693522714274982,
+          "exact": 5.6935227142750024,
+          "gap": 2.042810365310288e-14,
+          "iterations": 10,
+          "status": "reference_certified"
+        },
+        {
+          "direction": 1,
+          "start": 2,
+          "f": 5.693522714274982,
+          "exact": 5.6935227142750024,
+          "gap": 2.042810365310288e-14,
+          "iterations": 22,
+          "status": "reference_certified"
+        },
+        {
+          "direction": -1,
+          "start": 0,
+          "f": 1.1290611950905944,
+          "exact": 1.1290611950905898,
+          "gap": 4.6629367034256575e-15,
+          "iterations": 25,
+          "status": "reference_certified"
+        },
+        {
+          "direction": -1,
+          "start": 1,
+          "f": 1.1290611950905944,
+          "exact": 1.1290611950905898,
+          "gap": 4.6629367034256575e-15,
+          "iterations": 26,
+          "status": "reference_certified"
+        },
+        {
+          "direction": -1,
+          "start": 2,
+          "f": 1.1290611950905944,
+          "exact": 1.1290611950905898,
+          "gap": 4.6629367034256575e-15,
+          "iterations": 13,
+          "status": "reference_certified"
+        }
+      ],
+      "exhaustive": {
+        "initial": 3.053942869961941,
+        "C_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "C_ids": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "top_degree": [
+          1,
+          2,
+          3,
+          4,
+          0,
+          5
+        ],
+        "top_gain": [
+          1,
+          3,
+          0,
+          4,
+          2,
+          5
+        ],
+        "overlap": 6,
+        "pool_size": 6,
+        "setup_seconds": 0.0013788770002065576,
+        "references": {
+          "2": {
+            "f": 4.418663390456348,
+            "indices": [
+              1,
+              4
+            ],
+            "ids": [
+              1,
+              4
+            ],
+            "alpha": [
+              0.001,
+              0.001
+            ],
+            "configurations": 60,
+            "subsets": 15,
+            "competitive_verified": 1,
+            "estimated_runner_gap": 0.007968403662950152,
+            "seconds": 0.003826688999652106,
+            "total_seconds": 0.005206239000017376,
+            "peak_mib": 111.2421875
+          },
+          "3": {
+            "f": 4.741982435284545,
+            "indices": [
+              1,
+              4,
+              5
+            ],
+            "ids": [
+              1,
+              4,
+              5
+            ],
+            "alpha": [
+              0.001,
+              0.001,
+              0.001
+            ],
+            "configurations": 160,
+            "subsets": 20,
+            "competitive_verified": 1,
+            "estimated_runner_gap": 0.061052764750452404,
+            "seconds": 0.008725952000077086,
+            "total_seconds": 0.013942370000222581,
+            "peak_mib": 111.2421875
+          }
+        },
+        "complete": true
+      },
+      "bonus": {
+        "initial": 4.741982435284543,
+        "f": 4.741982435284543,
+        "added_gain": 0.0,
+        "ids": [
+          1,
+          4,
+          5
+        ],
+        "indices": [
+          1,
+          4,
+          5
+        ],
+        "alpha": [
+          0.001,
+          0.001,
+          0.001
+        ],
+        "moves": [],
+        "scans": 1,
+        "evaluations": 21,
+        "already_local": true,
+        "local_optimal_tolerance": 1e-08,
+        "seconds": 0.0027803180000773864,
+        "peak_mib": 111.2421875
+      }
+    },
+    {
+      "nodes": 5,
+      "edges": 10,
+      "gradient_error": 4.2202019656656375e-11,
+      "iteration_steps": 153,
+      "naive_fast_match": true,
+      "pgd": [
+        {
+          "direction": 1,
+          "start": 0,
+          "f": 3.2388891453194923,
+          "exact": 3.238889145319492,
+          "gap": -4.440892098500626e-16,
+          "iterations": 23,
+          "status": "reference_certified"
+        },
+        {
+          "direction": 1,
+          "start": 1,
+          "f": 3.2388891453194923,
+          "exact": 3.238889145319492,
+          "gap": -4.440892098500626e-16,
+          "iterations": 8,
+          "status": "reference_certified"
+        },
+        {
+          "direction": 1,
+          "start": 2,
+          "f": 3.2388891453194923,
+          "exact": 3.238889145319492,
+          "gap": -4.440892098500626e-16,
+          "iterations": 14,
+          "status": "reference_certified"
+        },
+        {
+          "direction": -1,
+          "start": 0,
+          "f": 0.10808600817512165,
+          "exact": 0.10808600817512115,
+          "gap": 4.996003610813204e-16,
+          "iterations": 20,
+          "status": "reference_certified"
+        },
+        {
+          "direction": -1,
+          "start": 1,
+          "f": 0.10808600817512165,
+          "exact": 0.10808600817512115,
+          "gap": 4.996003610813204e-16,
+          "iterations": 23,
+          "status": "reference_certified"
+        },
+        {
+          "direction": -1,
+          "start": 2,
+          "f": 0.10808600817512165,
+          "exact": 0.10808600817512115,
+          "gap": 4.996003610813204e-16,
+          "iterations": 20,
+          "status": "reference_certified"
+        }
+      ],
+      "exhaustive": {
+        "initial": 2.359311558911699,
+        "C_indices": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "C_ids": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "top_degree": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "top_gain": [
+          1,
+          2,
+          4,
+          0,
+          3
+        ],
+        "overlap": 5,
+        "pool_size": 5,
+        "setup_seconds": 0.0013427430003503105,
+        "references": {
+          "2": {
+            "f": 3.114883276087513,
+            "indices": [
+              0,
+              4
+            ],
+            "ids": [
+              0,
+              4
+            ],
+            "alpha": [
+              0.001,
+              0.001
+            ],
+            "configurations": 40,
+            "subsets": 10,
+            "competitive_verified": 1,
+            "estimated_runner_gap": 0.05182546718830672,
+            "seconds": 0.0027286800000183575,
+            "total_seconds": 0.0040720050001255,
+            "peak_mib": 111.2421875
+          },
+          "3": {
+            "f": 3.2217281532569713,
+            "indices": [
+              0,
+              3,
+              4
+            ],
+            "ids": [
+              0,
+              3,
+              4
+            ],
+            "alpha": [
+              0.001,
+              0.001,
+              0.001
+            ],
+            "configurations": 80,
+            "subsets": 10,
+            "competitive_verified": 1,
+            "estimated_runner_gap": 0.02838915169589873,
+            "seconds": 0.00415666200024134,
+            "total_seconds": 0.0082389270000931,
+            "peak_mib": 111.2421875
+          }
+        },
+        "complete": true
+      },
+      "bonus": {
+        "initial": 3.171025623004699,
+        "f": 3.221728153256971,
+        "added_gain": 0.05070253025227167,
+        "ids": [
+          0,
+          3,
+          4
+        ],
+        "indices": [
+          0,
+          3,
+          4
+        ],
+        "alpha": [
+          0.001,
+          0.001,
+          0.001
+        ],
+        "moves": [
+          {
+            "kind": "swap",
+            "removed": 1,
+            "inserted": 3,
+            "alpha": 0.001,
+            "f": 3.221728153256971,
+            "gain": 0.050702530252272116,
+            "max_error": 1.1102230246251565e-16,
+            "residual": 1.7309287683731078e-16
+          }
+        ],
+        "scans": 2,
+        "evaluations": 30,
+        "already_local": false,
+        "local_optimal_tolerance": 1e-08,
+        "seconds": 0.005237454000052821,
+        "peak_mib": 111.2421875
+      }
+    }
+  ],
+  "seconds": 1.228144254000199,
+  "python": "3.12.14"
+}

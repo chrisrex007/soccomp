@@ -1,0 +1,20 @@
+{
+  "execution_experiment_hash": "759dba774c1bfa52818c85310e770bc957da038ade81afb021044c649950c48a",
+  "delivery_experiment_hash": "1a9c6907538c45d4e0a2b5aac7e9c914a671fbd6644ab45b922a2f996c6cf64f",
+  "execution_source_sha256": {
+    "Assignment2_23CS10012_analysis_task4.py": "bc01aedbf9807e9f5605ce43757911f1180b52bcdc0528c786244f26ffbf5990",
+    "Assignment2_23CS10012_paper_task2.py": "6a885360d9d4bd5ed9e64d7685af54a3c866b6087d85214b4810dfb173309d4b",
+    "Assignment2_23CS10012_bonus_task4.py": "57e73508b9a583785e4e6498cb74b861ee4581810f663f8b2e5176eeb9cf69b2",
+    "Assignment2_23CS10012_groundtruth_task3.py": "4d4e61cb7c8af7772268b97239d230c3f43e83e7086db9a54a05182fda624230",
+    "Assignment2_23CS10012_greedy_task1.py": "c54795992691e22e076e8cc4cacc719d0b98ef064758b7e27165db2b01a3cf09"
+  },
+  "delivery_source_sha256": {
+    "Assignment2_23CS10012_analysis_task4.py": "47526cbd10bc13ead82f0ff86f65c0ab266a2353a17abe85dcc6868d6b5cfa00",
+    "Assignment2_23CS10012_paper_task2.py": "6a885360d9d4bd5ed9e64d7685af54a3c866b6087d85214b4810dfb173309d4b",
+    "Assignment2_23CS10012_bonus_task4.py": "57e73508b9a583785e4e6498cb74b861ee4581810f663f8b2e5176eeb9cf69b2",
+    "Assignment2_23CS10012_groundtruth_task3.py": "4d4e61cb7c8af7772268b97239d230c3f43e83e7086db9a54a05182fda624230",
+    "Assignment2_23CS10012_greedy_task1.py": "c54795992691e22e076e8cc4cacc719d0b98ef064758b7e27165db2b01a3cf09"
+  },
+  "change": "Only report() presentation, findings and bibliography updated after numerical execution. All numerical scripts and the analysis module outside report() are byte/AST equivalent to the executed versions.",
+  "analysis_except_report_ast_sha256": "4c38709e0499d3b99d92825e080191321e1ad99a4dca1efb5a90702e08197834"
+}

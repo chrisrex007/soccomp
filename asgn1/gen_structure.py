@@ -4,8 +4,6 @@ import sys
 from collections import Counter, deque
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -24,8 +22,7 @@ def ensure_output_directories():
     Path("plots").mkdir(exist_ok=True)
 
 
-# The edge list is directed, so reverse pairs collapse into one undirected
-# edge; self loops are dropped as they mean nothing here.
+# The edge list is directed, so reverse pairs collapse into one undirected edge; self loops are dropped as they mean nothing here.
 def load_subgraph(subgraph_name):
     filepath = Path("subgraphs") / subgraph_name
     if not filepath.exists():
@@ -46,14 +43,12 @@ def load_subgraph(subgraph_name):
     return graph
 
 
-# Plain lists are a lot faster to walk than the NetworkX neighbour views,
-# and we do one search per node below.
+# Plain lists are a lot faster to walk than the NetworkX neighbour views, and we do one search per node below.
 def build_adjacency(graph):
     return {node: list(graph.neighbors(node)) for node in graph.nodes()}
 
 
-# Only reaches nodes in the same component as source, so the result also
-# identifies that component.
+# Only reaches nodes in the same component as source, so the result also identifies that component.
 def bfs_distances(adjacency, source):
     dist = {source: 0}
     queue = deque([source])
@@ -71,8 +66,7 @@ def print_network_size(graph):
     print(f"Number of edges:{graph.number_of_edges()}")
 
 
-# Several nodes can tie at the maximum, so report all of them.  The plot is
-# log-log because the distribution is heavy tailed.
+# Several nodes can tie at the maximum, so report all of them.  The plot is log-log because the distribution is heavy tailed.
 def print_degree_metrics(graph, subgraph_name):
     degrees = dict(graph.degree())
     max_degree = max(degrees.values())
@@ -97,11 +91,9 @@ def print_degree_metrics(graph, subgraph_name):
     plt.close()
 
 
-# Diameters are sampled, but the length distribution is exact: one search per
-# node sees every connected pair twice, so the counts are halved.
-def print_path_metrics(graph, subgraph_name):
-    adjacency = build_adjacency(graph)
-    nodes = list(graph.nodes())
+# Diameters are sampled, but the length distribution is exact: one search per node sees every connected pair twice, so the counts are halved.
+def print_path_metrics(adjacency, subgraph_name):
+    nodes = list(adjacency)
 
     diameters = []
     for sample_size in DIAMETER_SAMPLE_SIZES:
@@ -117,14 +109,14 @@ def print_path_metrics(graph, subgraph_name):
         f"{mean_diameter:.4f}, {variance:.4f}"
     )
 
-    length_counts = Counter()
+    lc = Counter()
     for source in nodes:
         for d in bfs_distances(adjacency, source).values():
             if d > 0:
-                length_counts[d] += 1
+                lc[d] += 1
 
-    xs = sorted(length_counts)
-    ys = [length_counts[x] // 2 for x in xs]
+    xs = sorted(lc)
+    ys = [lc[x] // 2 for x in xs]
 
     plt.figure()
     plt.bar(xs, ys, width=0.8, edgecolor="black", linewidth=0.3)
@@ -136,8 +128,7 @@ def print_path_metrics(graph, subgraph_name):
     plt.close()
 
 
-# Sizes run from 2 up to the giant component, so both axes are logarithmic
-# and the counts are drawn as points rather than bars.
+# Sizes run from 2 up to the giant component, so both axes are logarithmic and the counts are drawn as points rather than bars.
 def print_component_metrics(graph, subgraph_name):
     component_sizes = [len(c) for c in nx.connected_components(graph)]
 
@@ -163,17 +154,22 @@ def print_component_metrics(graph, subgraph_name):
     plt.close()
 
 
-# Each triad is counted once by each of its three members, and an edge sits in
-# a triad exactly when its two endpoints share a neighbour.
-def print_clustering_metrics(graph, subgraph_name):
-    clustering = nx.clustering(graph)
+# Each triad is counted once by each of its three members, and an edge sits in a triad exactly when its two endpoints share a neighbour.
+def print_clustering_metrics(graph, adjacency, subgraph_name):
+    # nx.clustering would repeat the triangle count that nx.triangles already does, so C_i = 2*T_i / (d_i*(d_i-1)) is derived from it instead.
     triangles = nx.triangles(graph)
+    clustering = {}
+    for node, nbrs in adjacency.items():
+        degree = len(nbrs)
+        clustering[node] = (
+            2.0 * triangles[node] / (degree * (degree - 1)) if degree > 1 else 0.0
+        )
 
-    average_clustering = sum(clustering.values()) / graph.number_of_nodes()
-    print(f"Average clustering coefficient:{average_clustering:.4f}")
+    avg_clustering = sum(clustering.values()) / len(adjacency)
+    print(f"Average clustering coefficient:{avg_clustering:.4f}")
     print(f"Number of triads:{sum(triangles.values()) // 3}")
 
-    random_node = random.choice(list(graph.nodes()))
+    random_node = random.choice(list(adjacency))
     print(
         f"Clustering coefficient of random node {random_node}:"
         f"{clustering[random_node]:.4f}"
@@ -183,7 +179,7 @@ def print_clustering_metrics(graph, subgraph_name):
         f"{triangles[random_node]}"
     )
 
-    neighbours = {node: set(graph.neighbors(node)) for node in graph.nodes()}
+    neighbours = {node: set(nbrs) for node, nbrs in adjacency.items()}
     edges_in_triads = sum(
         1 for u, v in graph.edges() if neighbours[u] & neighbours[v]
     )
@@ -206,11 +202,13 @@ def main():
     ensure_output_directories()
 
     graph = load_subgraph(args.subgraph_name)
+    adjacency = build_adjacency(graph)
+
     print_network_size(graph)
     print_degree_metrics(graph, args.subgraph_name)
-    print_path_metrics(graph, args.subgraph_name)
+    print_path_metrics(adjacency, args.subgraph_name)
     print_component_metrics(graph, args.subgraph_name)
-    print_clustering_metrics(graph, args.subgraph_name)
+    print_clustering_metrics(graph, adjacency, args.subgraph_name)
 
 
 if __name__ == "__main__":

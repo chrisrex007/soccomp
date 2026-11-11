@@ -1,8 +1,6 @@
 from pathlib import Path
 
-
-# Keep only the edges whose endpoints are both odd, i.e. drop every node
-# whose id is divisible by 2.
+# Keep only the edges whose endpoints are both odd, i.e. drop every node whose id is divisible by 2.
 def extract_subgraph():
     raw_path = Path("subgraphs") / "cit-HepTh.txt"
     out_path = Path("subgraphs") / "cite-phy.elist"
@@ -23,8 +21,6 @@ def extract_subgraph():
 
             if src % 2 != 0 and dst % 2 != 0:
                 fout.write(f"{src}\t{dst}\n")
-
-    print(f"Subgraph written to {out_path}")
 
 
 if __name__ == "__main__":

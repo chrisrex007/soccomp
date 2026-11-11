@@ -1,22 +1,32 @@
-# Current revision — 11 November 2026: execution pending
+# Refactor verification — 11 November 2026
 
-Task 2 part 2 has been rewritten to use the corrected paper's basic local-search
-strategy. The PGD implementation, driver calls and report sections are replaced.
-The canonical initialization and three assignment starting points are supported;
-new boundary, tie, exhaustive-optimum and move-history checks are included.
+The five required scripts retain the assignment algorithms and file names.
+The refactor separates graph loading, seeded inputs, software metadata, numerical
+checks, saved-result validation, report calculations, plotting and PDF rendering.
+Confirmed unused imports, an unused state counter and an overwritten setup object
+have been removed. CLI statements have been expanded for readability.
 
-At the user's request, this revision has **not been run or verified**: no syntax
-check, test suite, experiment, PDF generation or archive validation was executed.
-The user will run it using RUN_GUIDE.md. No new numerical results are claimed.
+Random checkpoints remain incomplete until aggregation succeeds. The driver
+validates requested budget rows, all Random trials and local-search diagnostics
+before reusing a worker. Reports and archives require completed, validated results
+with a matching source fingerprint. Reports use saved input arrays and manifest
+metadata rather than newly sampled inputs or the rendering environment's versions.
 
-Existing results/, report PDF, submission ZIP and their delivery/provenance
-records describe the old source revision. Do not submit them with the rewritten
-scripts or copy them into the new result directory. Regenerate artifacts after
-running and reviewing the new version.
+Verification uses Python 3.12.3 with the pinned package versions. The independent
+small-graph suite and workflow regression tests pass. Before/after numerical
+checks exclude timing and memory fields when comparing algorithm outputs.
+Report calculations match the completed pre-refactor results-local run: 36 table
+rows, 32 reference-comparison rows, marginal counts and baseline claim verdicts.
+All 12 figures and a PDF were rendered to a temporary directory for verification.
 
-The four deferred findings remain unfixed: generic short-run reuse, Random's
-premature completion checkpoint, archive report-file validation, and regenerated
-report environment metadata. Workarounds and manual checks are in RUN_GUIDE.md.
+The complete Facebook experiments have not been rerun after this refactor, and
+submission artifacts have not been regenerated. Existing results-local/ belongs
+to the previous source fingerprint and records Python 3.12.14. Preserve it; use a
+fresh results-refactor/ directory for a new run. Do not edit hashes to make old
+measurements appear to come from the refactored source.
+
+The remaining archive limitation is manual PDF validity and layout inspection.
+See RUN_GUIDE.md for execution commands and acceptance criteria.
 
 ## Historical execution record — 9 November 2026 (previous implementation)
 

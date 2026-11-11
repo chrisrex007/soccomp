@@ -1,13 +1,15 @@
 # Run and verify the rewritten Assignment 2
 
-This guide is for **you to execute**. The local-search rewrite has not been run,
-syntax-checked, tested, benchmarked, rendered or archive-validated by the agent.
-The checks described below are acceptance criteria, not reported successes.
+This guide describes execution and acceptance criteria for the refactored scripts.
+The numerical checks, workflow regressions and report-calculation comparisons have
+been exercised. The full Facebook benchmark has not been rerun after refactoring;
+existing results retain their original provenance and timing measurements.
 
 The old `results/`, report PDF and ZIP remain historical artifacts. Do not submit
 them with the new scripts. The new implementation replaces Task 2 part 2's PGD;
 Task 2's fast greedy, baselines, Random and witnesses retain their algorithms.
-The shared Task 1 metadata only renames the stream-3000 description.
+Graph loading, seeded parameter generation and software metadata are now separate.
+The report reads the recorded input arrays and experiment metadata.
 
 ## 1. Open Ubuntu and prepare Python
 
@@ -54,6 +56,7 @@ for script in Assignment2_23CS10012_*.py; do
     python "$script" --help || break
 done
 python Assignment2_23CS10012_analysis_task4.py checks --output checks-local
+python -m unittest discover -s tests -v
 ```
 
 Stop on an exception or a nonzero exit code. Expected successful output includes
@@ -61,7 +64,10 @@ Stop on an exception or a nonzero exit code. Expected successful output includes
 `checks-local/checks/validation.json`: `passed` should be true. Do not trust a
 file left from an earlier failed invocation without checking the command's exit.
 
-The suite now checks:
+The `unittest` command is for a source checkout. The numerical `checks` command
+also works in the five-script submission archive.
+
+The numerical suite checks:
 
 - Path and complete graphs: all endpoint assignments enumerated with independent
   dense linear solves, for minimization and maximization. Local search runs from
@@ -78,6 +84,10 @@ The suite now checks:
 - Complement identity, original-ID ordering after a matrix permutation, and a
   zero-move cap returning an uncertified result on a non-optimal policy.
 - The existing equilibrium, greedy, Woodbury, Random, exhaustive and bonus checks.
+
+Workflow regressions cover interrupted Random checkpoints, truncated completed
+runs, missing trials, invalid local diagnostics, saved input ordering, source
+completion markers and the meaning of maximisation/minimisation gain ratios.
 
 For a code-level inspection, check the update rule in `local_search`: for the
 minimizing opinions, d=s-Pz positive selects LOW, negative selects HIGH. Each
@@ -147,10 +157,10 @@ should decrease. Both U and P are fixed seeded opinion draws, not repeated sampl
 After the small checks and smoke run pass:
 
 ```bash
-python Assignment2_23CS10012_analysis_task4.py run --output results-local
+python Assignment2_23CS10012_analysis_task4.py run --output results-refactor
 ```
 
-Choose an unused directory name if results-local already holds an unrelated or
+Choose an unused directory name if results-refactor already holds an unrelated or
 partial manually assembled run. Keep smoke-local separate. The full driver
 reruns the checks, Task 1, budgeted comparisons, all four local-search scenarios,
 witnesses, Task 3 and the bonus. There are 16 local-search runs in total:
@@ -159,15 +169,15 @@ U/P x min/max x four starts.
 Expected new result files include:
 
 ```text
-results-local/local_U_max_all.json
-results-local/local_U_min_all.json
-results-local/local_P_max_all.json
-results-local/local_P_min_all.json
-results-local/inputs.npz
-results-local/manifest.json
-results-local/commands.json
-results-local/checks/validation.json
-results-local/complete.json
+results-refactor/local_U_max_all.json
+results-refactor/local_U_min_all.json
+results-refactor/local_P_max_all.json
+results-refactor/local_P_min_all.json
+results-refactor/inputs.npz
+results-refactor/manifest.json
+results-refactor/commands.json
+results-refactor/checks/validation.json
+results-refactor/complete.json
 ```
 
 The final complete marker should appear only after the driver succeeds. Inspect
@@ -196,7 +206,7 @@ from scipy import sparse
 from scipy.sparse.linalg import spsolve
 from Assignment2_23CS10012_greedy_task1 import load_inputs
 
-out = Path('results-local')
+out = Path('results-refactor')
 ids, _, P, _, _, _ = load_inputs(Path('data/facebook_combined.txt'))
 inputs = np.load(out / 'inputs.npz')
 assert np.array_equal(ids, inputs['ids'])
@@ -265,8 +275,8 @@ expensive. The small-graph suite already does this for every move on its fixture
 Use the **same activated environment and thread settings** as the experiment:
 
 ```bash
-python Assignment2_23CS10012_analysis_task4.py report --output results-local --report Assignment2_23CS10012_report_local.pdf
-python Assignment2_23CS10012_analysis_task4.py archive --output results-local --report Assignment2_23CS10012_report_local.pdf --archive Assignment2_23CS10012_local.zip
+python Assignment2_23CS10012_analysis_task4.py report --output results-refactor --report Assignment2_23CS10012_report_local.pdf
+python Assignment2_23CS10012_analysis_task4.py archive --output results-refactor --report Assignment2_23CS10012_report_local.pdf --archive Assignment2_23CS10012_local.zip
 ```
 
 The archive command itself runs checks after extraction, checks entry-point help,
@@ -285,8 +295,7 @@ missing figures, and these content requirements:
   comparisons use the new result directory.
 - Task 3's restricted C optima are still distinguished from all-node optima.
 - Software/seed/command information matches your execution manifest. The report
-  still reads some metadata from its rendering environment (a deferred issue),
-  hence the requirement to render in the same environment.
+  uses the recorded experiment metadata and saved input arrays.
 
 Inspect the ZIP contents: five Python scripts, requirements, README, RUN_GUIDE,
 the **new** PDF, dataset and new results under results/. It should not contain
@@ -308,21 +317,18 @@ checking the new ones. Do not upload the previous committed artifacts by mistake
 | Interrupted full run | Preserve logs; assess the worker files before resuming, as described below. |
 | Missing aggregate rows / report crash | Inspect Random checkpoints and worker lengths; do not change complete flags by hand. |
 
-The four previously deferred issues are intentionally not fixed:
+The refactor resolves three previously deferred issues:
 
-1. **Generic worker reuse accepts short runs.** Never run a short budget into
-   results-local or mix standalone outputs into it. For an audit, naive and
-   shortlist-fast rows should cover 10 rounds; all-node fast/I/II/Random should
-   cover 30 for U-max, P-max and U-min.
-2. **Random can mark a checkpoint complete before aggregate rows exist.** Before
-   resuming an interrupted run, inspect each Random file for both all 20 trials
-   and aggregate rows at the requested budget. The safest recovery is a fresh
-   output directory and full rerun. The new local worker only marks its own
-   result complete after all four runs pass; that does not fix other workers.
-3. **The archive validator does not prove the report file is a valid PDF.** Open
-   and inspect the generated PDF and its copy inside the ZIP yourself.
-4. **Report metadata can reflect the rendering environment.** Render immediately
-   in the same environment; compare it with manifest.json before submission.
+1. Worker reuse validates the requested budget rows. Ground-truth worker reuse
+   also requires its companion files, and Random requires all 20 complete trials
+   plus consistent aggregate objectives. Invalid checkpoints are rerun.
+2. Random trial checkpoints remain `complete=false` until aggregate rows exist.
+3. Reports obtain experiment metadata from `manifest.json` and inputs from
+   `inputs.npz`. Rendering does not regenerate the experimental draw.
+
+The remaining manual check is that the report is a valid, readable PDF. Archive
+extraction and numerical checks do not establish page layout or PDF validity;
+open the generated PDF and its copy inside the ZIP yourself.
 
 Do not expect precisely the earlier runtimes or endpoint vectors. The intended
 acceptance is a successful execution plus independently checked objectives and

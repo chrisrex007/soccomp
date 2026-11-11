@@ -2,9 +2,11 @@
 
 Task 2 part 2 now implements the corrected paper's non-convex local search in
 place of projected gradient descent, following the TA's 11 November clarification.
-**This source revision has not been run or verified.** The existing results,
-PDF and ZIP belong to the previous implementation and are not a submission of
-this revision. Execution, verification and artifact generation are left to you.
+The scripts have been refactored into separate input, validation, analysis and
+rendering functions. Numerical checks and workflow regression tests cover this
+revision. Existing `results-local/` records a completed run before the refactor;
+its results are preserved, but its source fingerprint does not match these scripts.
+Run into a fresh directory before generating submission artifacts for this revision.
 
 Read [RUN_GUIDE.md](RUN_GUIDE.md) for WSL setup, staged commands, expected outputs,
 acceptance criteria, troubleshooting and the final submission checklist.
@@ -24,15 +26,25 @@ export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1
 export MPLCONFIGDIR=/tmp/soccomp-matplotlib XDG_CACHE_HOME=/tmp/soccomp-cache
 python Assignment2_23CS10012_analysis_task4.py checks --output checks-local
 python Assignment2_23CS10012_analysis_task4.py prepare
-python Assignment2_23CS10012_analysis_task4.py run --output results-local
-python Assignment2_23CS10012_analysis_task4.py report --output results-local --report Assignment2_23CS10012_report_local.pdf
-python Assignment2_23CS10012_analysis_task4.py archive --output results-local --report Assignment2_23CS10012_report_local.pdf --archive Assignment2_23CS10012_local.zip
+python Assignment2_23CS10012_analysis_task4.py run --output results-refactor
+python Assignment2_23CS10012_analysis_task4.py report --output results-refactor --report Assignment2_23CS10012_report_local.pdf
+python Assignment2_23CS10012_analysis_task4.py archive --output results-refactor --report Assignment2_23CS10012_report_local.pdf --archive Assignment2_23CS10012_local.zip
 ```
 
-Use a **new** results-local directory for this revision. Do not copy earlier
+Use a **new** results-refactor directory for this revision. Do not copy earlier
 worker JSON files into it. Source/data hashes change when numerical scripts or
 the report generator change. The driver intentionally refuses results from a
-different source fingerprint. The guide describes the deferred reuse weaknesses.
+different or missing source fingerprint. Reused worker files must cover every
+requested budget and, for Random, all 20 trials and their aggregate rows.
+
+In a source checkout, also run the workflow regression tests:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+The five-script submission retains its self-contained `checks` command; the
+additional source-checkout tests exercise interruption recovery and report math.
 
 The prepare command validates the existing data/facebook_combined.txt, or
 downloads the official SNAP file if absent. Expected counts: 4,039 nodes, 88,234
@@ -56,7 +68,9 @@ python Assignment2_23CS10012_paper_task2.py --method local --profile U --directi
 - Maximise by minimising complemented opinions, with final evaluation on the
   original opinions. No random perturbation is added to the assignment inputs.
 - Four runs per profile/objective: the canonical all-upper-bound start plus the
-  three original assignment starts converted from X to resistance coordinates.
+  three supplementary starts chosen for this implementation, including two
+  converted from X to resistance coordinates. The assignment does not prescribe
+  particular starting vectors.
   Only the canonical run has the at-most-n irrevocable-flip guarantee.
 - Keep exact or unresolved ties unchanged. Supplementary starts can retain
   interior coordinates at an optimum; endpoint counts are reported honestly.
@@ -81,5 +95,9 @@ python Assignment2_23CS10012_paper_task2.py --method local --profile U --directi
 - Task 3 exhaustive optima are restricted to C. All-node comparison ratios can
   exceed one. Runtime includes initialization; RSS is total process peak in MiB.
 
-RUN_STATUS.md distinguishes this unexecuted revision from the previous run.
+Report calculations are independent of plotting. Reports use the saved
+`inputs.npz` and experiment `manifest.json`, including the recorded software
+versions, rather than generating new inputs or substituting the rendering environment.
+
+RUN_STATUS.md distinguishes refactor verification from the previous full run.
 IMPLEMENTATION_PLAN.md and REVIEW.md retain historical planning material.

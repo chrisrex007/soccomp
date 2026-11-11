@@ -64,7 +64,7 @@ def load_inputs(dataset):
     meta = dict(dataset_sha256=hashlib.sha256(path.read_bytes()).hexdigest(), nodes=len(ids),
                 edges=graph.number_of_edges(), components=1, raw_lines=lines,
                 removed_loops=loops, collapsed_duplicates=duplicates, seed=SEED,
-                streams={'alpha':0,'U':1,'P':2,'random':'1000 + pool_code*100 + trial','pgd':3000},
+                streams={'alpha':0,'U':1,'P':2,'random':'1000 + pool_code*100 + trial','local_x_start':3000},
                 python=platform.python_version(), numpy=np.__version__, scipy=scipy.__version__,
                 networkx=nx.__version__, pandas=version('pandas'), matplotlib=version('matplotlib'), machine=platform.machine(), processor=platform.processor(),
                 cpus=os.cpu_count(), threads={k:os.environ.get(k) for k in ('OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','MKL_NUM_THREADS')})

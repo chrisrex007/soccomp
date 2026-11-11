@@ -1,5 +1,10 @@
 # Assignment 2 implementation and validation plan
 
+> Historical plan for the previous implementation. The 11 November 2026 TA
+> clarification supersedes the PGD scope below. Task 2 part 2 is now rewritten
+> around local search; the current run/verification instructions are in
+> RUN_GUIDE.md and execution is pending as recorded in RUN_STATUS.md.
+
 Roll number: 23CS10012. Deadline: 13 November 2026, 23:59 IST.
 
 ## Scope and evidence

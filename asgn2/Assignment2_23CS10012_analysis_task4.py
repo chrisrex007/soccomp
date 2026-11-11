@@ -21,7 +21,7 @@ import zipfile
 import numpy as np
 import networkx as nx
 from Assignment2_23CS10012_greedy_task1 import (ROOT,LOW,HIGH,BUDGETS,Solver,system,save_json,load_inputs,graph_matrix,rng,naive,iterate,small_checks)
-from Assignment2_23CS10012_paper_task2 import (State,FixedBase,fast,baseline,random_trials,pg_value_gradient,projected_gradient,bellman_reference,paper_example,optimized_set,witnesses)
+from Assignment2_23CS10012_paper_task2 import (State,FixedBase,fast,baseline,random_trials,local_search,local_starts,LOCAL_TOL,bellman_reference,paper_example,optimized_set,witnesses)
 from Assignment2_23CS10012_groundtruth_task3 import exhaustive
 from Assignment2_23CS10012_bonus_task4 import improve
 
@@ -54,20 +54,42 @@ def checks(output):
         for left,right in zip(slow['rows'],quick['rows']):
             assert (left['index'],left['alpha'])==(right['index'],right['alpha'])
             assert abs(left['f']-right['f'])<1e-8
-        x=1/a;f,zz,grad=pg_value_gradient(P,s,x);fd=[]
-        for j in range(n):
-            e=np.zeros(n);e[j]=1e-5
-            fd.append((pg_value_gradient(P,s,x+e,False)[0]-pg_value_gradient(P,s,x-e,False)[0])/2e-5)
-        gradient_error=float(np.max(abs(grad-fd)));assert gradient_error<1e-7
-        exactbase=FixedBase(State(P,a,s),np.arange(n));pgd=[]
+        # Enumerate all endpoints using independent dense solves (no State or
+        # local-search update code), for both objectives and all four starts.
+        endpoint_values=[float(np.linalg.solve(system(P,np.array(es)).toarray(),np.array(es)*s).sum())
+                         for es in product((LOW,HIGH),repeat=n)]
+        local_runs=[]
         for direction in (1,-1):
-            exact=optimized_set(exactbase,list(range(n)),direction)[0]
+            exact=max(endpoint_values) if direction==1 else min(endpoint_values)
             ref=bellman_reference(P,s,direction);assert abs(ref['f']-exact)<1e-8
-            for start_no,x0 in enumerate([1/a,np.full(n,500.5),rng(3000).uniform(1,1000,n)]):
-                result=projected_gradient(P,s,x0,direction,maxiter=10000)
+            objectives=[]
+            for name,a0 in local_starts(a):
+                result=local_search(P,s,a0,ids,direction)
                 gap=direction*(exact-result['f'])
-                assert gap<1e-5, (n,direction,start_no,result['status'],gap)
-                pgd.append(dict(direction=direction,start=start_no,f=result['f'],exact=exact,gap=gap,iterations=result['iterations'],status=result['status']))
+                assert result['status']=='certified' and abs(gap)<=LOCAL_TOL, (n,direction,name,result['status'],gap)
+                assert result['objective_error_bound']<=LOCAL_TOL
+                assert np.all((result['alpha']>=LOW)&(result['alpha']<=HIGH))
+                trial=a0.copy();previous=float(np.linalg.solve(system(P,trial).toarray(),trial*s).sum())
+                for row in result['history']:
+                    assert int(ids[row['index']])==row['node']
+                    assert trial[row['index']]==row['alpha_before']
+                    trial[row['index']]=row['alpha_after']
+                    actual=float(np.linalg.solve(system(P,trial).toarray(),trial*s).sum())
+                    assert abs(actual-row['f'])<1e-8
+                    assert direction*(actual-previous)>0 and row['gain']>row['gain_uncertainty']
+                    previous=actual
+                assert np.array_equal(trial,result['alpha'])
+                if name=='upper':
+                    assert result['moves']<=n and result['endpoint_count']==n
+                    assert len({row['node'] for row in result['history']})==result['moves']
+                    assert all(row['alpha_before']==HIGH and row['alpha_after']==LOW for row in result['history'])
+                complement=local_search(P,1-s,a0,ids,-direction)
+                assert complement['status']=='certified'
+                assert abs(complement['f']+result['f']-n)<LOCAL_TOL
+                objectives.append(result['f'])
+                local_runs.append(dict(direction=direction,start_name=name,f=result['f'],exact=exact,gap=gap,
+                                       moves=result['moves'],status=result['status'],objective_error_bound=result['objective_error_bound']))
+            assert np.ptp(objectives)<=LOCAL_TOL
         reference,C=exhaustive(P,a,s,ids,degree,pool_size=n)
         for k in (2,3):
             expected=__import__('math').comb(n,k)*2**k
@@ -116,11 +138,38 @@ def checks(output):
                 assert abs(solver.solve(P,trial,s).sum()-f)<1e-8
             gap=witness['marginal_large']-witness['marginal_small']
             assert (gap>0 if kind=='nonsubmodular' else gap<0)
-        records.append(dict(nodes=n,edges=graph.number_of_edges(),gradient_error=gradient_error,iteration_steps=steps,
-                            naive_fast_match=True,pgd=pgd,exhaustive=reference,bonus=bonus))
-    result=dict(passed=True,graphs=records,seconds=time.perf_counter()-start,python=platform.python_version())
+        records.append(dict(nodes=n,edges=graph.number_of_edges(),iteration_steps=steps,
+                            naive_fast_match=True,local=local_runs,exhaustive=reference,bonus=bonus))
+    local_edges=local_edge_checks()
+    result=dict(passed=True,graphs=records,local_edge_checks=local_edges,seconds=time.perf_counter()-start,python=platform.python_version())
     save_json(output/'validation.json',result);print('All independent small-graph checks passed',flush=True)
     return result
+
+def local_edge_checks():
+    """Boundary, ties, original-ID ordering and non-convergence regressions."""
+    ids,_,P=graph_matrix(nx.path_graph([10,30]));s=np.array([1.,0.]);upper=np.full(2,HIGH)
+    # Here z=s at alpha=1: using s-z would falsely stop immediately.
+    values={}
+    for direction in (-1,1):
+        result=local_search(P,s,upper,ids,direction)
+        expected=LOW if direction==-1 else 2-LOW
+        assert result['status']=='certified' and abs(result['f']-expected)<1e-10
+        assert result['moves']==1 and result['history'][0]['node']==(10 if direction==-1 else 30)
+        blocked=local_search(P,s,upper,ids,direction,max_moves=0)
+        assert blocked['status']=='move_limit' and blocked['objective_error_bound']>LOCAL_TOL
+        values['max' if direction==1 else 'min']=result['f']
+        for constant in (0.,.5,1.):
+            a0=np.array([.2,.7]);flat=local_search(P,np.full(2,constant),a0,ids,direction)
+            assert flat['status']=='certified' and flat['moves']==0
+            assert np.array_equal(flat['alpha'],a0) and abs(flat['f']-2*constant)<1e-10
+    ids,_,P=graph_matrix(nx.path_graph([10,20,30]));s=np.array([1.,0.,1.]);a0=np.full(3,HIGH)
+    first=local_search(P,s,a0,ids,-1);perm=np.array([2,0,1])
+    second=local_search(P[perm,:][:,perm],s[perm],a0[perm],ids[perm],-1)
+    assert first['status']==second['status']=='certified'
+    assert first['history'][0]['node']==10
+    assert [row['node'] for row in first['history']]==[row['node'] for row in second['history']]
+    assert abs(first['f']-second['f'])<1e-10
+    return dict(two_node=values,upper_boundary=True,constant_ties=True,original_id_order=True,move_limit=True)
 
 def prepare(dataset):
     dataset=Path(dataset);dataset.parent.mkdir(parents=True,exist_ok=True)
@@ -175,10 +224,12 @@ def run(dataset,output):
             worker('paper_task2',['--method',method,'--profile',profile,'--direction',direction],f'{method}_{profile}_{direction}_all.json')
     for profile in ('U','P'):
         for direction in ('max','min'):
-            worker('paper_task2',['--method','pgd','--profile',profile,'--direction',direction],f'pgd_{profile}_{direction}_all.json')
-            pgd=read(output,f'pgd_{profile}_{direction}_all.json')
-            if any(r['reference_gap']>1e-5 or r['reference_gap'] < -1e-5 for r in pgd['runs']):
-                raise ArithmeticError(f'PGD needs convergence diagnosis: {profile} {direction}; see saved histories')
+            worker('paper_task2',['--method','local','--profile',profile,'--direction',direction],f'local_{profile}_{direction}_all.json')
+            local_result=read(output,f'local_{profile}_{direction}_all.json')
+            if (len(local_result['runs'])!=4 or local_result['start_spread']>LOCAL_TOL
+                or any(r['status']!='certified' or r['objective_error_bound']>LOCAL_TOL
+                       or abs(r['reference_gap'])>LOCAL_TOL for r in local_result['runs'])):
+                raise ArithmeticError(f'Local search needs convergence diagnosis: {profile} {direction}; see saved histories')
         worker('paper_task2',['--method','witness','--profile',profile],f'witness_{profile}_max_all.json')
         worker('groundtruth_task3',['--profile',profile,'--restricted-comparisons'],f'random_{profile}_max_C.json')
     for profile,direction in SCENARIOS:worker('bonus_task4',['--profile',profile,'--direction',direction],f'bonus_{profile}_{direction}.json')
@@ -208,7 +259,7 @@ def report(dataset,output,report_path):
         path=figures/(name+'.png');fig.savefig(path,dpi=150,bbox_inches='tight');plot_paths.append(path);plt.close(fig)
     for profile,direction in SCENARIOS:
         sign=1 if direction=='max' else -1
-        ref=read(output,f'pgd_{profile}_{direction}_all.json')['reference']['f']
+        ref=read(output,f'local_{profile}_{direction}_all.json')['optimum']['f']
         fig,(ax,zoom)=plt.subplots(1,2,figsize=(12,4.8));scenario={}
         for method in METHODS:
             data=read(output,f'{method}_{profile}_{direction}_all.json');scenario[method]=data
@@ -220,7 +271,7 @@ def report(dataset,output,report_path):
             for k in (5,10,30):
                 row=data['rows'][k-1];den=sign*(ref-data['initial'])
                 table.append(dict(profile=profile,direction=direction,method=method,k=k,f=row['f'],gain_fraction=sign*(row['f']-data['initial'])/den if den else None,seconds=row['seconds'],peak_mib=row['peak_mib']))
-        ax.axhline(ref,color='black',ls='--',label='Certified unbudgeted reference');ax.axhline(scenario['fast']['initial'],color='gray',ls=':',label='Initial')
+        ax.axhline(ref,color='black',ls='--',label='Certified unbudgeted local search');ax.axhline(scenario['fast']['initial'],color='gray',ls=':',label='Initial')
         ax.set(xlabel='Budget k',ylabel='Total equilibrium opinion',title=f'{profile} {direction}: global reference');ax.legend(fontsize=8)
         zoom.axhline(scenario['fast']['initial'],color='gray',ls=':',label='Initial');zoom.set(xlabel='Budget k',ylabel='Total equilibrium opinion',title='Budgeted methods (zoom)');zoom.legend(fontsize=8);fig.tight_layout();figure_save(fig,f'objective_{profile}_{direction}')
         greedy=scenario['fast'];gains=[r['gain'] for r in greedy['rows']]
@@ -272,7 +323,7 @@ def report(dataset,output,report_path):
             'Software: '+json.dumps(meta),
             'Execution hardware: '+json.dumps(read(output,'hardware.json')) if (output/'hardware.json').exists() else 'Hardware details: see manifest.json.',
             'Data: official SNAP facebook_combined.txt, undirected simple graph; input SHA-256 '+meta['dataset_sha256']+'. Duplicate edges collapse and self loops are removed; observed counts: '+str({k:meta[k] for k in ('nodes','edges','components','removed_loops','collapsed_duplicates')}),
-            'Bounds [0.001,1]; budgets 1,2,3,4,5,10,20,30. Initial alpha uniform; U uniform; P Beta(0.5,0.5). SeedSequence([2026,stream]) with alpha=0,U=1,P=2. The same alpha is shared across profiles. Random stream=1000+100*pool_code+trial (20 trials); PGD random start=3000.',
+            'Bounds [0.001,1]; budgets 1,2,3,4,5,10,20,30. Initial alpha uniform; U uniform; P Beta(0.5,0.5). SeedSequence([2026,stream]) with alpha=0,U=1,P=2. The same alpha is shared across profiles. Random stream=1000+100*pool_code+trial (20 trials); local-search random X start=3000.',
             'Reproduction: python '+PREFIX+'analysis_task4.py prepare; python '+PREFIX+'analysis_task4.py run; python '+PREFIX+'analysis_task4.py report. Use --dataset and --output to override paths. commands.json records each task command. requirements.txt pins tested versions. Set OPENBLAS_NUM_THREADS=OMP_NUM_THREADS=MKL_NUM_THREADS=1 before Python.',
             'Timing includes algorithm initialization and numerical verification. Each main algorithm runs in a fresh Python subprocess. Peak memory is Linux total-process ru_maxrss / 1024 MiB, including native arrays. Random time is initial setup plus the sum of 20 trial prefix times; its shading is one sample standard deviation, not a confidence interval.'
         ])
@@ -285,7 +336,13 @@ def report(dataset,output,report_path):
             slow=read(output,f'naive_{profile}.json')['rows'][-1];quick=read(output,f'fast_{profile}_max_shortlist.json')['rows'][-1]
             findings.append(f'{profile} matching-shortlist ten rounds: fresh solves {slow["seconds"]:.3f} s versus fast {quick["seconds"]:.3f} s ({slow["seconds"]/quick["seconds"]:.2f}x speedup), with matching targets and endpoint assignments.')
         findings.append('These comparisons describe one recorded draw of the initial resistances and each opinion profile. Random variability is conditional on those fixed inputs; it is not uncertainty over graph samples or opinion-profile draws.')
-        findings.append('The required PGD experiments and an independent reference agree numerically for all three starts in all four profile/objective combinations. The false convexity rationale is explicitly separated from the valid endpoint theorem and unbudgeted solvability.')
+        for profile in ('U','P'):
+            for direction in ('max','min'):
+                data=read(output,f'local_{profile}_{direction}_all.json')
+                findings.append(f'{profile} {direction} local search: '+json.dumps(dict(
+                    canonical_f=data['optimum']['f'],start_spread=data['start_spread'],
+                    statuses=[r['status'] for r in data['runs']],moves=[r['moves'] for r in data['runs']],
+                    maximum_reference_gap=max(abs(r['reference_gap']) for r in data['runs']))))
         exact_matches=[]
         for profile in ('U','P'):
             ground=read(output,f'groundtruth_{profile}.json');greedy=read(output,f'fast_{profile}_max_all.json')
@@ -311,23 +368,36 @@ def report(dataset,output,report_path):
             'Baseline I ranks innate s. Baseline II ranks degree/(2m) times s/sum_neighbor(s). Both assign selected alpha=1, as in paper Section 5. Minimisation ranks 1-s but evaluates original s. Positive/zero is infinity and 0/0 is zero; ties use IDs.',
             'Random samples 20 uniform permutations, using nested prefixes. At each step it tests both endpoints given earlier assignments and keeps the better one. It does not jointly reoptimize the selected set. Fixed-base Woodbury systems avoid new full solves. All-node and C-restricted universes are labeled separately.'
         ])
-        page('Task 2: unbudgeted method and discrepancy',[
-            'Write B=X-(X-I)P with x=1/alpha in [1,1000]. Differentiate Bz=s: df/dx_i=-q_i*((I-P)z)_i, where B^T q=1. PGD minimizes -f for maximisation and f for minimisation using projection, adaptive spectral trial steps, and Armijo backtracking. Initial points are 1/alpha, the box midpoint, and a recorded random interior point.',
-            'The assignment states this objective is convex. A two-node counterexample with s=(1,0) gives f(x,y)=(2y-1)/(x+y-1). f(2,2)=1 > [f(2,1)+f(2,3)]/2=7/8; it is also below [f(1,2)+f(3,2)]/2=9/8. We execute the requested PGD experiment but do not infer convexity or global optimality from matching runs.',
-            'An independent endpoint-policy reference is obtained by policy improvement and certified numerically using H_i(z)=max/min over a in {0.001,1} of a*s_i+(1-a)*(Pz)_i. H is monotone and a contraction with factor <=0.999. Its unique fixed point bounds all policy equilibria and is attained by its endpoint actions. For a freshly solved policy, n*||H(z)-z||_infinity/0.001 bounds total-objective error in exact arithmetic; reported floating-point residual certificates are numerical, not interval proofs.',
-            'Claim 1: the unbudgeted optimum does admit a polynomial-size linear-program formulation in equilibrium-value coordinates, although the claimed convexity in X is false. For maximisation, minimize sum(v) subject to v_i >= a*s_i+(1-a)*(Pv)_i for every i and both a in {l,u}. These inequalities say v>=H_max(v); monotonicity and contraction imply v>=v*, while v* is feasible and attained by its maximizing endpoint policy. For minimisation, maximize sum(v) with both inequalities reversed: every feasible v lies below the fixed point of H_min. Each LP has n variables and 2n linear inequalities, giving polynomial-time solvability for rational inputs under the standard LP bit-complexity model. This is an independent argument, not a claim that PGD has a global polynomial convergence guarantee. The experiments continue to use the assigned PGD method.',
-            'Claim 2: the coordinate endpoint theorem holds; PGD endpoint counts and independent reference assignments below show what these runs actually produce.',
-            'The complement identity f_(1-s)=n-f_s follows from B*1=1 and is tested numerically.',
-            'The corrected/superseding paper, Abebe et al. (2020), arXiv:2011.02583v1, acknowledges the earlier correctness issue in its abstract and introduction (Comparison with Previous Versions), proves marginal monotonicity in Section 5, and describes a polynomial local-search construction in Section 6. Our two-node X-coordinate counterexample directly addresses the substitution stated in this assignment.'
+        page('Task 2 part 2: corrected non-convex local search',[
+            'Following the TA clarification dated 11 November 2026, the unbudgeted experiment uses the corrected paper\'s local-search strategy in Section 6.1. The previous projected-gradient implementation is replaced. This is the basic equilibrium-based single-coordinate strategy, not the approximate or optimistic algorithms of Section 6.3.',
+            'For minimisation, solve Mz=A s and compute d=s-Pz. At the first reliably improving coordinate in ascending original-ID order, set alpha_i to 0.001 if d_i>0, or to 1 if d_i<0. Recompute equilibrium after one accepted move. Exact or numerically unresolved ties keep their current alpha; opinions are not perturbed.',
+            'Boundary adaptation: the paper assumes upper bounds below 1. At alpha_i=1, s_i-z_i=0 even when lowering alpha_i improves the objective. Instead use dz/dalpha_i=M^-1 e_i*(s_i-(Pz)_i), whose nonnegative inverse column has positive sum. Thus the neighbour-average test remains valid at the assignment\'s upper bound 1.',
+            'The canonical run begins at all upper bounds. In exact arithmetic each coordinate moves from upper to lower at most once: every accepted minimising move decreases z componentwise, so s-Pz cannot decrease. This extends the irrevocable-update argument to upper bound 1. The implementation rejects a reverse flip in this run. The three additional initialisations are robustness comparisons and do not inherit the n-move guarantee.',
+            'Starts: upper=all ones; initial=the sampled resistance vector; x_midpoint=1/500.5 in each coordinate; x_random=reciprocals of the stream-3000 uniform draw on [1,1000]. The last three preserve the original assignment starting points after converting X back to alpha.',
+            'Maximisation minimises complemented innate opinions 1-s. A fresh final solve with the original s supplies the reported objective and checks f_s+f_(1-s)=n. Histories report the original objective; positive gain always means improvement in the requested direction.'
+        ])
+        page('Task 2: numerical acceptance and theory',[
+            'Every proposed move uses a fresh equilibrium solve. With r=||Mz-A s||_infinity, an equilibrium error estimate is (r+8*machine_epsilon)/min(alpha). Accept a move only when its objective improvement exceeds the combined total-objective uncertainty of the old and new solves. If a scan finds no resolvable move, repeat with sparse direct solves before stopping.',
+            'A final independent direct solve is checked against H_i(z)=max/min over a in {0.001,1} of a*s_i+(1-a)*(Pz)_i. The contraction bound is n*||H(z)-z||_infinity/0.001; the implementation adds a roundoff allowance and an equilibrium-solve error allowance. These are floating-point residual diagnostics, not rigorous interval certificates.',
+            'Success requires each of the four starts to have status certified and an objective error bound <=1e-5, absolute reference gaps <=1e-5, and a total-objective spread <=1e-5. A move cap or unresolved sign is not accepted as proof of convergence. The independent simultaneous endpoint-policy routine remains a cross-check; plot reference lines use the certified canonical local-search result.',
+            'The transformed objective is not convex in general. For two nodes with s=(1,0), f(x,y)=(2y-1)/(x+y-1). f(2,2)=1 exceeds [f(2,1)+f(2,3)]/2=7/8, but is below [f(1,2)+f(3,2)]/2=9/8. No convexity claim is used to justify the new algorithm.',
+            'The corrected paper establishes the structure behind local and global optima and gives the all-upper-bound irrevocable strategy. Endpoint optima exist; ties can also admit interior optimal coordinates. Therefore interior coordinates in a supplementary start are reported, not forcibly rounded or treated alone as a failure.',
+            'Small-graph checks compare local search with exhaustive endpoint enumeration using independent dense solves, replay each accepted move, and test constant-opinion ties, the alpha=1 boundary, complement symmetry, move limits and original-ID ordering.'
         ])
         for profile in ('U','P'):
             for direction in ('max','min'):
-                data=read(output,f'pgd_{profile}_{direction}_all.json')
-                page(f'Unbudgeted {profile} {direction}',[
-                    'Reference: '+json.dumps({k:v for k,v in data['reference'].items() if k!='alpha'}),
-                    *[json.dumps({k:v for k,v in r.items() if k not in ('alpha','history')}) for r in data['runs']],
-                    'Full alpha vectors and optimization histories are in the corresponding raw JSON file. Small-graph PGD versus exhaustive endpoint checks: '+json.dumps([{k:v for k,v in g.items() if k in ('nodes','gradient_error','pgd')} for g in read(output/'checks','validation.json')['graphs']])
+                data=read(output,f'local_{profile}_{direction}_all.json')
+                page(f'Unbudgeted local search {profile} {direction}',[
+                    'Canonical optimum: '+json.dumps(data['optimum']),
+                    'Independent reference: '+json.dumps({k:v for k,v in data['reference'].items() if k!='alpha'}),
+                    'Four-start objective spread: '+str(data['start_spread']),
+                    *[json.dumps({k:v for k,v in r.items() if k not in ('alpha','initial_alpha','history')}) for r in data['runs']],
+                    'Full initial/final alpha vectors and move histories are in the corresponding raw JSON file.'
                 ])
+        page('Task 2 local-search validation',[
+            json.dumps([{k:v for k,v in g.items() if k in ('nodes','local')} for g in read(output/'checks','validation.json')['graphs']]),
+            'Boundary and tie checks: '+json.dumps(read(output/'checks','validation.json')['local_edge_checks'])
+        ])
         page('Task 2: non-submodularity and claim verdicts',[
             'The supplied published paper labels the requested example Example 4, not Example 13. Triangle s=(1,0,0), alpha=(0.1,0.1,0.1): '+json.dumps(read(output/'checks','paper_example.json')),
             'The paper prints 1.493 for f({3})-f(empty), omitting f(empty)=1. The corrected marginal is about 0.493 and the non-supermodularity violation remains.',
@@ -364,14 +434,14 @@ def report(dataset,output,report_path):
         for path in plot_paths:
             fig=plt.figure(figsize=(11.69,8.27));ax=fig.add_axes([.04,.04,.92,.92]);ax.imshow(plt.imread(path));ax.axis('off');pdf.savefig(fig);plt.close(fig)
         page('Commands producing the numerical results',[
-            'Commands below are the actual execution commands in the cloud workspace. For another location, use the included scripts with --dataset and --output pointing to the extracted input/results. The README gives portable commands.',
+            'Commands below are the recorded execution commands. For another location, use the included scripts with --dataset and --output pointing to the extracted input/results. The README and RUN_GUIDE give WSL commands.',
             *[' '.join(entry['command']) for entry in read(output,'commands.json') if not entry.get('reused')]
         ])
         page('References and reproducibility',[
             'Abebe, Kleinberg, Parkes, Tsourakakis. Opinion Dynamics with Varying Susceptibility to Persuasion. KDD 2018, pp.1089-1098. DOI:10.1145/3219819.3219983. Sections 2,4,5 supply endpoint, greedy and baseline definitions.',
             'SNAP ego-Facebook: https://snap.stanford.edu/data/ego-Facebook.html',
             'CS60017 Assignment: Opinion Maximisation on ego-Facebook, supplied four-page assignment, deadline 13 November 2026.',
-            'Abebe, Chan, Kleinberg, Liang, Parkes, Sozio, Tsourakakis. Opinion Dynamics with Varying Susceptibility to Persuasion via Non-Convex Local Search. arXiv:2011.02583v1, 4 November 2020. https://arxiv.org/abs/2011.02583. Abstract, introduction and Section 5 were inspected for the correction discussed here.',
+            'Abebe, Chan, Kleinberg, Liang, Parkes, Sozio, Tsourakakis. Opinion Dynamics with Varying Susceptibility to Persuasion via Non-Convex Local Search. arXiv:2011.02583v1, 4 November 2020. https://arxiv.org/abs/2011.02583. Sections 5 and 6.1 supply the corrected structural argument and basic local-search strategy; the upper-bound-1 adaptation is described above.',
             'Raw per-round records, target IDs, assigned endpoints, seeds, reference certificates, command list, input arrays/checksums and software metadata accompany this report. Generated tables and figures derive exclusively from those completed experiments.'
         ])
     print('Wrote',report_path,flush=True)
@@ -380,7 +450,7 @@ def archive(dataset,output,report_path,destination):
     if not Path(report_path).is_file():raise RuntimeError('Generate the completed report before archiving')
     marker=read(output,'complete.json')
     if marker['experiment_hash']!=experiment_hash(dataset):raise RuntimeError('Archive inputs changed since experiment completion')
-    files=list(ROOT.glob(PREFIX+'*.py'))+[Path(report_path),ROOT/'requirements.txt',ROOT/'README.md',Path(dataset)]
+    files=list(ROOT.glob(PREFIX+'*.py'))+[Path(report_path),ROOT/'requirements.txt',ROOT/'README.md',ROOT/'RUN_GUIDE.md',Path(dataset)]
     files+=list(Path(output).rglob('*.json'))+list(Path(output).rglob('*.csv'))+list(Path(output).rglob('*.npz'))+list(Path(output).rglob('*.png'))
     with zipfile.ZipFile(destination,'w',zipfile.ZIP_DEFLATED) as z:
         for path in files:

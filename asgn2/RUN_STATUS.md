@@ -1,4 +1,24 @@
-# Completed execution — 9 November 2026
+# Current revision — 11 November 2026: execution pending
+
+Task 2 part 2 has been rewritten to use the corrected paper's basic local-search
+strategy. The PGD implementation, driver calls and report sections are replaced.
+The canonical initialization and three assignment starting points are supported;
+new boundary, tie, exhaustive-optimum and move-history checks are included.
+
+At the user's request, this revision has **not been run or verified**: no syntax
+check, test suite, experiment, PDF generation or archive validation was executed.
+The user will run it using RUN_GUIDE.md. No new numerical results are claimed.
+
+Existing results/, report PDF, submission ZIP and their delivery/provenance
+records describe the old source revision. Do not submit them with the rewritten
+scripts or copy them into the new result directory. Regenerate artifacts after
+running and reviewing the new version.
+
+The four deferred findings remain unfixed: generic short-run reuse, Random's
+premature completion checkpoint, archive report-file validation, and regenerated
+report environment metadata. Workarounds and manual checks are in RUN_GUIDE.md.
+
+## Historical execution record — 9 November 2026 (previous implementation)
 
 All five required scripts and the full ego-Facebook experiments are complete.
 Python 3.12.14; exact library versions are in requirements.txt and the report.

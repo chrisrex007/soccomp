@@ -1,11 +1,11 @@
-"""Task 2: rank-one greedy, original-paper baselines, PGD and witnesses."""
+"""Task 2: rank-one greedy, baselines, non-convex local search and witnesses."""
 from __future__ import annotations
 import argparse
 from itertools import product
 import time
 import numpy as np
 from scipy import linalg
-from scipy.sparse.linalg import bicgstab, spsolve
+from scipy.sparse.linalg import spsolve
 import networkx as nx
 from Assignment2_23CS10012_greedy_task1 import (LOW,HIGH,BUDGETS,ROOT,TIE,Solver,system,save_json,rss,rng,graph_matrix,load_inputs,shortlist,choose)
 
@@ -117,15 +117,6 @@ def random_trials(P,a,s,ids,k=30,direction=1,pool=None,pool_code=0,trials=20,out
     if out:save_json(out,result)
     return result
 
-def pg_value_gradient(P,s,x,gradient=True):
-    a=1/x;solver=Solver();z=solver.solve(P,a,s);f=float(z.sum())
-    if not gradient:return f,z
-    # B=X*M, so B^T q=1 is M^T*(X q)=1; avoid forming a poorly scaled B.
-    M=system(P,a);adjoint,info=bicgstab(M.T,np.ones(len(x)),rtol=2e-13,atol=2e-13,maxiter=10000)
-    if info!=0 or np.max(abs(M.T@adjoint-1))>1e-9:adjoint=spsolve(M.T,np.ones(len(x)))
-    q=adjoint/x;grad=-q*(z-P@z)
-    return f,z,grad
-
 def bellman_reference(P,s,direction):
     """Endpoint policy improvement, certified afterwards by Bellman residual."""
     start=time.perf_counter();solver=Solver();a=np.full(len(s),.5)
@@ -142,45 +133,132 @@ def bellman_reference(P,s,direction):
     if bound>1e-5:raise ArithmeticError(f'Insufficient reference accuracy: {bound}')
     return dict(f=float(z.sum()),alpha=a,bellman_residual=residual,objective_error_bound=bound,iterations=it+1,seconds=time.perf_counter()-start)
 
-def projected_gradient(P,s,x0,direction,maxiter=10000):
-    start=time.perf_counter();x=x0.copy();eta=1.;history=[];status='iteration_limit'
-    f,z,grad=pg_value_gradient(P,s,x);g=-direction*grad
-    for iteration in range(maxiter):
-        eta=min(eta*2,1e12);F=-direction*f
-        accepted=False
-        for backtrack in range(80):
-            y=np.clip(x-eta*g,1,1/LOW);d=y-x
-            if np.max(abs(d))<1e-13:break
-            fy,zy=pg_value_gradient(P,s,y,False)
-            if -direction*fy <= F+1e-4*np.dot(g,d)+1e-11:
-                accepted=True;break
-            eta*=.5
-        mapping=float(np.max(abs(x-np.clip(x-g,1,1/LOW))))
-        if not accepted:
-            status='projected_stationary' if mapping<1e-9 else 'line_search_failed';break
-        oldg=g;oldx=x;x=y
-        f,z,grad=pg_value_gradient(P,s,x);g=-direction*grad
-        if iteration%25==0 or iteration==maxiter-1:
-            history.append(dict(iteration=iteration+1,f=f,eta=eta,mapping=mapping,seconds=time.perf_counter()-start))
-        # A Bellman residual checks global quality of this very PGD policy.
-        p=P@z;H=np.maximum(LOW*s+(1-LOW)*p,s) if direction==1 else np.minimum(LOW*s+(1-LOW)*p,s)
-        bound=len(s)*float(np.max(abs(H-z)))/LOW
-        if bound<1e-5:status='reference_certified';break
-        displacement=x-oldx;change=g-oldg;den=np.dot(displacement,change)
-        if den>0:eta=float(np.clip(np.dot(displacement,displacement)/den,.0001,1e12))/2
-    a=1/x;z=Solver().solve(P,a,s)
-    return dict(f=float(z.sum()),alpha=a,iterations=iteration+1,status=status,history=history,
-                endpoint_count=int(np.count_nonzero((abs(a-LOW)<1e-8)|(abs(a-HIGH)<1e-8))),seconds=time.perf_counter()-start,peak_mib=rss())
+LOCAL_TOL = 1e-5  # Absolute error in the TOTAL equilibrium opinion, not its mean.
 
-def unbudgeted(P,a,s,direction,out=None,maxiter=10000):
-    reference=bellman_reference(P,s,direction)
-    starts=[1/a,np.full(len(a),(1+1/LOW)/2),rng(3000).uniform(1,1/LOW,len(a))]
-    runs=[]
-    for number,x in enumerate(starts):
-        result=projected_gradient(P,s,x,direction,maxiter);result['start']=number
-        result['reference_gap']=direction*(reference['f']-result['f']);runs.append(result)
-        if out:save_json(out,dict(reference=reference,runs=runs,complete=number==2))
-    return dict(reference=reference,runs=runs,complete=True)
+
+def local_starts(a):
+    """Canonical paper start followed by the assignment's three former X starts.
+
+    Invert the midpoint/random X vectors; do not substitute an alpha midpoint.
+    The same stream and arrays are used for both profiles and both objectives.
+    """
+    return [('upper',np.full(len(a),HIGH)),('initial',a.copy()),
+            ('x_midpoint',np.full(len(a),2/(1+1/LOW))),
+            ('x_random',1/rng(3000).uniform(1,1/LOW,len(a)))]
+
+
+def local_search(P,s,a0,ids,direction,max_moves=None,objective_tolerance=LOCAL_TOL):
+    """Section 6.1 single-coordinate local search with checked equilibrium solves.
+
+    This is the basic equilibrium-based strategy, not the approximate/optimistic
+    algorithms in Section 6.3. Extend the paper's u<1 rule to u=1 using s-Pz:
+    dz/dalpha_i = M^-1 e_i (s_i-(Pz)_i). No division by 1-alpha_i.
+    Maximise by minimising complemented opinions. Never perturb the inputs.
+    Numerical residual bounds are floating-point diagnostics, not interval
+    proofs. An unresolved move/sign is not by itself evidence of optimality.
+    """
+    start=time.perf_counter();s=np.asarray(s,dtype=float);a=np.array(a0,dtype=float,copy=True)
+    ids=np.asarray(ids);n=len(s)
+    if direction not in (-1,1):raise ValueError('direction must be -1 or 1')
+    if (n==0 or a.shape!=s.shape or ids.shape!=s.shape or P.shape!=(n,n)
+        or len(np.unique(ids))!=n or not np.isfinite(s).all() or not np.isfinite(a).all()
+        or np.any((s<0)|(s>1)) or np.any((a<LOW)|(a>HIGH))):
+        raise ValueError('Invalid opinions, resistances, IDs or matrix dimensions')
+    if objective_tolerance<=0:raise ValueError('objective_tolerance must be positive')
+    canonical=bool(np.all(a==HIGH));max_moves=(n if canonical else 10*n) if max_moves is None else max_moves
+    if max_moves<0:raise ValueError('max_moves must be nonnegative')
+    opinions=1-s if direction==1 else s
+    order=np.argsort(ids,kind='stable');solver=Solver();direct_solves=0;history=[]
+    roundoff=8*np.finfo(float).eps
+
+    def equilibrium(alpha,values,direct=False):
+        nonlocal direct_solves
+        M=system(P,alpha)
+        if direct:
+            direct_solves+=1;z=np.asarray(spsolve(M,alpha*values))
+        else:z=solver.solve(P,alpha,values)
+        residual=float(np.max(abs(M@z-alpha*values)))
+        if not np.isfinite(z).all() or not np.isfinite(residual) or residual>1e-10:
+            raise ArithmeticError('Local-search equilibrium solve failed')
+        error=(residual+roundoff)/float(np.min(alpha))
+        return z,error,residual
+
+    def original_total(z):
+        return float(n-z.sum()) if direction==1 else float(z.sum())
+
+    z,error,_=equilibrium(a,opinions);initial=original_total(z)
+    stop_reason='move_limit';rejected=0;refinement_passes=0
+    while len(history)<max_moves:
+        accepted=False
+        # Retry unresolved scans with direct solves before stopping. Each scan
+        # restarts in original-ID order, accepting one reliably improving move.
+        for refined in (False,True):
+            if refined:
+                z,error,_=equilibrium(a,opinions,direct=True);refinement_passes+=1
+            difference=opinions-P@z
+            for v in order:
+                if difference[v]>error:endpoint=LOW
+                elif difference[v]<-error:endpoint=HIGH
+                else:continue  # Exact/uncertain tie: keep the current resistance.
+                if a[v]==endpoint:continue
+                trial=a.copy();trial[v]=endpoint
+                new_z,new_error,new_residual=equilibrium(trial,opinions,direct=refined)
+                improvement=float(z.sum()-new_z.sum())
+                uncertainty=n*(error+new_error)+roundoff*n
+                if improvement<=uncertainty:
+                    rejected+=1;continue
+                if canonical and (a[v]!=HIGH or endpoint!=LOW):
+                    raise ArithmeticError('Canonical local search attempted a repeated/reverse flip')
+                old=float(a[v]);before=original_total(z);a=trial;z=new_z;error=new_error
+                history.append(dict(move=len(history)+1,index=int(v),node=int(ids[v]),
+                                    alpha_before=old,alpha_after=endpoint,f_before=before,f=original_total(z),
+                                    gain=improvement,gain_uncertainty=uncertainty,
+                                    equilibrium_residual=new_residual,seconds=time.perf_counter()-start))
+                accepted=True;break
+            if accepted:break
+        if not accepted:
+            stop_reason='no_resolved_improving_move';break
+
+    # Certify this policy independently using ORIGINAL opinions and fresh solves.
+    actual,actual_error,solve_residual=equilibrium(a,s,direct=True)
+    transformed,_,_=equilibrium(a,opinions,direct=True)
+    p=P@actual;alternatives=np.stack([LOW*s+(1-LOW)*p,HIGH*s+(1-HIGH)*p])
+    H=np.max(alternatives,axis=0) if direction==1 else np.min(alternatives,axis=0)
+    bellman_residual=float(np.max(abs(H-actual)))
+    bound=n*(bellman_residual+roundoff)/LOW+n*actual_error
+    complement_error=abs(float(actual.sum())-original_total(transformed))
+    certified=bool(bound<=objective_tolerance and complement_error<=objective_tolerance)
+    status='certified' if certified else ('move_limit' if stop_reason=='move_limit' else 'numerically_unresolved')
+    return dict(initial=initial,f=float(actual.sum()),alpha=a,initial_alpha=np.array(a0,copy=True),
+                direction='max' if direction==1 else 'min',canonical=canonical,moves=len(history),
+                max_moves=max_moves,status=status,stop_reason=stop_reason,history=history,
+                endpoint_count=int(np.count_nonzero((a==LOW)|(a==HIGH))),
+                equilibrium_residual=solve_residual,bellman_residual=bellman_residual,
+                objective_error_bound=bound,objective_tolerance=objective_tolerance,
+                complement_error=complement_error,rejected_trials=rejected,refinement_passes=refinement_passes,
+                equilibrium_solves=solver.calls+direct_solves,direct_solves=direct_solves,
+                solver_recoveries=solver.recoveries,seconds=time.perf_counter()-start,peak_mib=rss())
+
+
+def unbudgeted(P,a,s,ids,direction,out=None,max_moves=None):
+    reference=bellman_reference(P,s,direction);runs=[]
+    result=dict(method='local',schema_version=1,reference=reference,runs=runs,
+                objective_tolerance=LOCAL_TOL,complete=False)
+    if out:save_json(out,result)
+    for number,(name,a0) in enumerate(local_starts(a)):
+        if out:print(f'Local search: starting {name} ({number+1}/4)',flush=True)
+        run=local_search(P,s,a0,ids,direction,max_moves=max_moves)
+        run.update(start=number,start_name=name,reference_gap=direction*(reference['f']-run['f']))
+        runs.append(run)
+        if out:save_json(out,result)
+        if out:print(f"Local search: {name}: {run['status']}, moves={run['moves']}, f={run['f']:.10f}",flush=True)
+    result['start_spread']=float(np.ptp([run['f'] for run in runs]))
+    result['optimum']=dict(f=runs[0]['f'],start_name='upper',
+                           objective_error_bound=runs[0]['objective_error_bound'])
+    result['complete']=bool(all(run['status']=='certified' and abs(run['reference_gap'])<=LOCAL_TOL
+                                for run in runs) and result['start_spread']<=LOCAL_TOL)
+    if out:save_json(out,result)
+    return result
 
 def optimized_set(base,S,direction=1):
     choices=[(base.evaluate(S,values),values) for values in product((LOW,HIGH),repeat=len(S))]
@@ -225,8 +303,11 @@ def witnesses(P,a,s,ids,limit=10000):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--dataset',type=__import__('pathlib').Path,default=ROOT/'data/facebook_combined.txt');parser.add_argument('--output',type=__import__('pathlib').Path,default=ROOT/'results')
-    parser.add_argument('--method',choices=['fast','I','II','random','pgd','witness','example'],default='fast');parser.add_argument('--profile',choices=['U','P'],default='U');parser.add_argument('--direction',choices=['max','min'],default='max');parser.add_argument('--pool',choices=['all','shortlist'],default='all');parser.add_argument('--k',type=int,default=30)
+    parser.add_argument('--method',choices=['fast','I','II','random','local','witness','example'],default='fast');parser.add_argument('--profile',choices=['U','P'],default='U');parser.add_argument('--direction',choices=['max','min'],default='max');parser.add_argument('--pool',choices=['all','shortlist'],default='all');parser.add_argument('--k',type=int,default=30)
+    parser.add_argument('--max-moves',type=int,default=None,help='Local search only: cap per start (default n for upper, 10*n otherwise)')
     args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
+    if args.method=='local' and args.pool!='all':parser.error('Local search is unbudgeted and requires --pool all')
+    if args.max_moves is not None and (args.method!='local' or args.max_moves<0):parser.error('--max-moves requires --method local and a nonnegative value')
     if args.method=='example':save_json(args.output/'paper_example.json',paper_example());return
     ids,degree,P,a,profiles,meta=load_inputs(args.dataset);s=profiles[args.profile];direction=1 if args.direction=='max' else -1
     pool=np.arange(len(a)) if args.pool=='all' else shortlist(ids,degree)
@@ -234,6 +315,8 @@ def main():
     if args.method=='fast':fast(P,a,s,ids,pool,args.k,direction,filename)
     elif args.method in ('I','II'):baseline(P,a,s,ids,degree,args.method,args.k,direction,pool,filename)
     elif args.method=='random':random_trials(P,a,s,ids,args.k,direction,pool,int(args.pool=='shortlist'),out=filename)
-    elif args.method=='pgd':unbudgeted(P,a,s,direction,filename)
+    elif args.method=='local':
+        result=unbudgeted(P,a,s,ids,direction,filename,args.max_moves)
+        if not result['complete']:raise ArithmeticError(f'Local search not certified; inspect {filename}')
     elif args.method=='witness':save_json(filename,witnesses(P,a,s,ids))
 if __name__=='__main__':main()

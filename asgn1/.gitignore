@@ -1,0 +1,37 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Output / generated files
+plots/
+centralities/
+*.png
+*.pdf
+*.svg
+*.log
+
+# Editor / IDE folders
+.vscode/
+.idea/
+
+# Local environment files
+.env
+.env.*
+
+# Temporary files
+*.tmp
+*.swp
+*~

@@ -5,8 +5,6 @@ __pycache__/
 
 # Virtual environments
 .venv/
-venv/
-env/
 
 # Jupyter / notebooks
 .ipynb_checkpoints/
@@ -14,14 +12,6 @@ env/
 # OS files
 .DS_Store
 Thumbs.db
-
-# Output / generated files
-plots/
-centralities/
-*.png
-*.pdf
-*.svg
-*.log
 
 # Editor / IDE folders
 .vscode/

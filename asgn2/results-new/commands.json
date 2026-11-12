@@ -1,0 +1,555 @@
+[
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_greedy_task1.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--profile",
+      "U"
+    ],
+    "wall_seconds": 21.523437906056643
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "fast",
+      "--profile",
+      "U",
+      "--pool",
+      "shortlist",
+      "--k",
+      "10"
+    ],
+    "wall_seconds": 3.3258328021038324
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_greedy_task1.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--profile",
+      "P"
+    ],
+    "wall_seconds": 21.413491212995723
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "fast",
+      "--profile",
+      "P",
+      "--pool",
+      "shortlist",
+      "--k",
+      "10"
+    ],
+    "wall_seconds": 3.5497688339091837
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "fast",
+      "--profile",
+      "U",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 5.004482696065679
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "I",
+      "--profile",
+      "U",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 0.9325541129801422
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "II",
+      "--profile",
+      "U",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 2.969123683171347
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "random",
+      "--profile",
+      "U",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 4.189707604935393
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new/measurements/k5",
+      "--method",
+      "random",
+      "--profile",
+      "U",
+      "--direction",
+      "max",
+      "--k",
+      "5"
+    ],
+    "wall_seconds": 2.9696338078938425
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new/measurements/k10",
+      "--method",
+      "random",
+      "--profile",
+      "U",
+      "--direction",
+      "max",
+      "--k",
+      "10"
+    ],
+    "wall_seconds": 2.894235967891291
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "fast",
+      "--profile",
+      "P",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 5.219164110021666
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "I",
+      "--profile",
+      "P",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 0.9029254280030727
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "II",
+      "--profile",
+      "P",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 1.0225905859842896
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "random",
+      "--profile",
+      "P",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 3.263510397169739
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new/measurements/k5",
+      "--method",
+      "random",
+      "--profile",
+      "P",
+      "--direction",
+      "max",
+      "--k",
+      "5"
+    ],
+    "wall_seconds": 3.0775276401545852
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new/measurements/k10",
+      "--method",
+      "random",
+      "--profile",
+      "P",
+      "--direction",
+      "max",
+      "--k",
+      "10"
+    ],
+    "wall_seconds": 3.4196916779037565
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "fast",
+      "--profile",
+      "U",
+      "--direction",
+      "min"
+    ],
+    "wall_seconds": 5.2785182481165975
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "I",
+      "--profile",
+      "U",
+      "--direction",
+      "min"
+    ],
+    "wall_seconds": 0.9867178108543158
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "II",
+      "--profile",
+      "U",
+      "--direction",
+      "min"
+    ],
+    "wall_seconds": 0.9646400378551334
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "random",
+      "--profile",
+      "U",
+      "--direction",
+      "min"
+    ],
+    "wall_seconds": 3.25170530914329
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new/measurements/k5",
+      "--method",
+      "random",
+      "--profile",
+      "U",
+      "--direction",
+      "min",
+      "--k",
+      "5"
+    ],
+    "wall_seconds": 3.1630056251306087
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new/measurements/k10",
+      "--method",
+      "random",
+      "--profile",
+      "U",
+      "--direction",
+      "min",
+      "--k",
+      "10"
+    ],
+    "wall_seconds": 3.014118602965027
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "local",
+      "--profile",
+      "U",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 178.28422337817028
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "local",
+      "--profile",
+      "U",
+      "--direction",
+      "min"
+    ],
+    "wall_seconds": 173.37500386382453
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "witness",
+      "--profile",
+      "U"
+    ],
+    "wall_seconds": 4.040274034021422
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_groundtruth_task3.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--profile",
+      "U",
+      "--restricted-comparisons"
+    ],
+    "wall_seconds": 7.048776442883536
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "local",
+      "--profile",
+      "P",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 145.24349414603785
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "local",
+      "--profile",
+      "P",
+      "--direction",
+      "min"
+    ],
+    "wall_seconds": 153.74702929588966
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_paper_task2.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--method",
+      "witness",
+      "--profile",
+      "P"
+    ],
+    "wall_seconds": 4.077593652065843
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_groundtruth_task3.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--profile",
+      "P",
+      "--restricted-comparisons"
+    ],
+    "wall_seconds": 6.926086381077766
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_bonus_task4.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--profile",
+      "U",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 16.16014983295463
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_bonus_task4.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--profile",
+      "P",
+      "--direction",
+      "max"
+    ],
+    "wall_seconds": 16.05167914694175
+  },
+  {
+    "command": [
+      "/home/bt3/23CS10012/soccomp/asgn2/.venv/bin/python",
+      "/home/bt3/23CS10012/soccomp/asgn2/Assignment2_23CS10012_bonus_task4.py",
+      "--dataset",
+      "/home/bt3/23CS10012/soccomp/asgn2/data/facebook_combined.txt",
+      "--output",
+      "/home/bt3/23CS10012/soccomp/asgn2/results-new",
+      "--profile",
+      "U",
+      "--direction",
+      "min"
+    ],
+    "wall_seconds": 16.250657487893477
+  }
+]

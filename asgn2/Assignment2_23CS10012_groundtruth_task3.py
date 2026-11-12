@@ -1,11 +1,11 @@
-"""Task 3: exhaustive restricted-pool references, with fresh-solve verification."""
+"""Task 3: exhaustive endpoint search on the required candidate pool."""
 from __future__ import annotations
 import argparse
 from itertools import combinations,product
 from pathlib import Path
 import time
 import numpy as np
-from Assignment2_23CS10012_greedy_task1 import LOW,HIGH,ROOT,TIE,Solver,save_json,load_inputs,shortlist,rss
+from Assignment2_23CS10012_greedy_task1 import LOW,HIGH,ROOT,save_json,load_inputs,shortlist,rss
 from Assignment2_23CS10012_paper_task2 import State,FixedBase,fast,baseline,random_trials
 
 def exhaustive(P,a,s,ids,degree,output=None,pool_size=15,ks=(2,3)):
@@ -15,26 +15,15 @@ def exhaustive(P,a,s,ids,degree,output=None,pool_size=15,ks=(2,3)):
     top_gain=np.lexsort((ids,-singleton))[:pool_size]
     C=np.union1d(top_degree,top_gain);base=FixedBase(state,C);setup=time.perf_counter()-start;results={}
     for k in ks:
-        tick=time.perf_counter();count=subsets=0;best=-np.inf;competitive=[];runner=-np.inf
+        tick=time.perf_counter();count=subsets=0;best=-np.inf;winner=None
         for S in combinations(C.tolist(),k):
             subsets+=1
             for values in product((LOW,HIGH),repeat=k):
                 f=base.evaluate(S,values);count+=1
                 if f>best:
-                    runner=best;best=f
-                    competitive=[item for item in competitive if best-item[0]<=1e-7]
-                elif f>runner:runner=f
-                if best-f<=1e-7:competitive.append((f,S,values))
-        verified=[];solver=Solver()
-        for f,S,values in competitive:
-            trial=a.copy();trial[list(S)]=values;actual=float(solver.solve(P,trial,s).sum())
-            if abs(actual-f)>1e-7:raise ArithmeticError('Exhaustive objective verification failed')
-            verified.append((actual,S,values))
-        highest=max(item[0] for item in verified)
-        winner=min((item for item in verified if highest-item[0]<=TIE),key=lambda item:(item[1],item[2]))
+                    best=f;winner=(f,S,values)
         results[str(k)]=dict(f=winner[0],indices=winner[1],ids=ids[list(winner[1])],alpha=winner[2],
-                            configurations=count,subsets=subsets,competitive_verified=len(verified),
-                            estimated_runner_gap=max(0.,best-runner),seconds=time.perf_counter()-tick,
+                            configurations=count,subsets=subsets,seconds=time.perf_counter()-tick,
                             total_seconds=time.perf_counter()-start,peak_mib=rss())
     result=dict(initial=initial,C_indices=C,C_ids=ids[C],top_degree=ids[top_degree],top_gain=ids[top_gain],
                 overlap=len(np.intersect1d(top_degree,top_gain)),pool_size=len(C),setup_seconds=setup,

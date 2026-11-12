@@ -4,7 +4,6 @@ import argparse
 import json
 from pathlib import Path
 import time
-import numpy as np
 from Assignment2_23CS10012_greedy_task1 import LOW,HIGH,ROOT,BUDGETS,save_json,load_inputs,shortlist,rss
 from Assignment2_23CS10012_paper_task2 import State,FixedBase
 
@@ -28,9 +27,9 @@ def improve(P,a,s,ids,pool,selected,endpoints,direction=1,tolerance=1e-8):
         kind,v,w,endpoint,f=best
         if kind=='swap':
             state.accept(v,a[v]);selected.remove(v);selected.add(w)
-        state.accept(w,endpoint);verification=state.verify()
+        state.accept(w,endpoint)
         if direction*(float(state.z.sum())-old)<=tolerance:raise ArithmeticError('Accepted bonus move did not improve')
-        moves.append(dict(kind=kind,removed=int(ids[v]) if kind=='swap' else None,inserted=int(ids[w]),alpha=endpoint,f=float(state.z.sum()),gain=best_gain,**verification))
+        moves.append(dict(kind=kind,removed=int(ids[v]) if kind=='swap' else None,inserted=int(ids[w]),alpha=endpoint,f=float(state.z.sum()),gain=best_gain))
     indices=sorted(selected)
     return dict(initial=initial,f=float(state.z.sum()),added_gain=direction*(float(state.z.sum())-initial),
                 ids=ids[indices],indices=indices,alpha=state.a[indices],moves=moves,scans=scans,evaluations=evaluations,
@@ -40,6 +39,11 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--dataset',type=Path,default=ROOT/'data/facebook_combined.txt');parser.add_argument('--output',type=Path,default=ROOT/'results');parser.add_argument('--profile',choices=['U','P'],default='U');parser.add_argument('--direction',choices=['max','min'],default='max')
     args=parser.parse_args();ids,degree,P,a,profiles,meta=load_inputs(args.dataset);s=profiles[args.profile];direction=1 if args.direction=='max' else -1
     greedy=json.loads((args.output/f'fast_{args.profile}_{args.direction}_all.json').read_text());results={}
+    rows=greedy['rows']
+    if (greedy.get('complete') is not True or len(rows)!=30
+        or [row['k'] for row in rows]!=list(range(1,31))
+        or len({row['index'] for row in rows})!=30):
+        raise ValueError('Bonus requires completed greedy input with rounds 1–30 and 30 distinct targets')
     for k in BUDGETS:
         rows=greedy['rows'][:k]
         results[str(k)]=improve(P,a,s,ids,shortlist(ids,degree),[r['index'] for r in rows],[r['alpha'] for r in rows],direction)

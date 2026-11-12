@@ -1,4 +1,8 @@
 {
+  "recorded_experiment_hash": "e9e8c52c2dc6c346229b50afe8d69ef0f9e9462bbece83862f3970da9874ea58",
+  "current_source_hash": "a8d75459b62a6554a535e55f48d4902a8fcadcb3cfc3c31281e8aaa2e5df5622",
+  "dataset_sha256": "f41c026ed8af3cc3359f1ca5573d0605fb09ae0eefa34544b820fd8c6e2ef296",
+  "results_directory": "/home/chrisrex/acads/soccomp/asgn2/results-local",
   "marginal_increases": {
     "U_max": 3,
     "P_max": 2,

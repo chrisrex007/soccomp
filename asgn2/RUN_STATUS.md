@@ -1,65 +1,51 @@
-# Current revision — 11 November 2026: execution pending
+# Manual report workflow — 12 November 2026
 
-Task 2 part 2 has been rewritten to use the corrected paper's basic local-search
-strategy. The PGD implementation, driver calls and report sections are replaced.
-The canonical initialization and three assignment starting points are supported;
-new boundary, tie, exhaustive-optimum and move-history checks are included.
+Assignment2_23CS10012_report_notes.md is a fixed reference containing the report
+explanations and saved numerical facts. It is not refreshed by Python. The user
+will rerun the task scripts, compare their outputs with the notes and write the
+report manually.
 
-At the user's request, this revision has **not been run or verified**: no syntax
-check, test suite, experiment, PDF generation or archive validation was executed.
-The user will run it using RUN_GUIDE.md. No new numerical results are claimed.
+The driver now has only `checks`, `prepare`, `run` and `analyze`. Notes formatting,
+report generation and archive packaging were removed. `analyze` retains the
+comparison calculations, three CSV tables, analysis.json and twelve PNG plots.
+The duplicate REPORT_GUIDE.md template was removed; its explanations remain in
+the complete report notes.
 
-Existing results/, report PDF, submission ZIP and their delivery/provenance
-records describe the old source revision. Do not submit them with the rewritten
-scripts or copy them into the new result directory. Regenerate artifacts after
-running and reviewing the new version.
+## Saved execution evidence
 
-The four deferred findings remain unfixed: generic short-run reuse, Random's
-premature completion checkpoint, archive report-file validation, and regenerated
-report environment metadata. Workarounds and manual checks are in RUN_GUIDE.md.
+Before the report-workflow edits, the dataset and all five Python files hashed
+to `e9e8c52c2dc6c346229b50afe8d69ef0f9e9462bbece83862f3970da9874ea58`,
+matching the saved manifest and completion marker in results-local/. That
+folder contains all 16 corrected-local-search runs. The older results/ folder
+contains historical PGD experiments.
 
-## Historical execution record — 9 November 2026 (previous implementation)
+The saved canonical objectives are U-max 3904.478179, U-min 132.539702,
+P-max 3994.183406 and P-min 47.759809. All 16 starts have status certified and
+agree within 1e-5 for each scenario. These numbers describe that saved execution.
+The four numerical task scripts and dataset were unchanged by the workflow edits.
+The full-source fingerprint changes when analysis_task4.py changes; use a fresh
+result directory for your new full run.
 
-All five required scripts and the full ego-Facebook experiments are complete.
-Python 3.12.14; exact library versions are in requirements.txt and the report.
-Assignment 1 and .gitignore are unchanged.
+## Verification
 
-## Data and numerical validation
+During the first report-workflow change, the independent small-graph checks
+passed and all 96 budget comparison rows, 16 local-start rows, 32 restricted
+reference comparisons and 12 plots were checked against the saved records.
 
-- Official SNAP graph: 4,039 nodes, 88,234 edges, one component; no duplicate
-  edges or self-loops were removed. Source/checksums are retained in data/ and
-  results/manifest.json.
-- Direct opinion iteration versus linear solve: maximum discrepancy below
-  1.5e-12 for both profiles (required tolerance 1e-8).
-- Two-node analytic checks, three endpoint sweeps, gradients, rank-one caches,
-  Woodbury evaluations, baseline definitions, Random endpoint choices, witness
-  assignment order and bonus local optimality passed independent small checks.
-- Task 1: 3,910 candidate solves per profile; every round matches fast greedy.
-  U: 50.47 s fresh versus 5.09 s fast; P: 57.25 s versus 5.93 s.
-- All 12 full-graph PGD runs reached the independent reference and assigned every
-  resistance to an endpoint. Both objectives were run for both profiles.
-- Exact pools: U has 26 nodes (overlap 4); P has 24 nodes (overlap 6). Enumerated
-  1,300/20,800 configurations for U at k=2/3 and 1,104/16,192 for P. Independently
-  verified winning configurations. Greedy matches these restricted optima.
-- Separate non-submodularity and non-supermodularity witnesses were found for
-  both profiles, with margins exceeding recorded numerical uncertainty.
-- Fast greedy beats both paper baselines at every required budget in U-max,
-  P-max and U-min for this seeded experiment. This is an empirical finding.
-- All 24 bonus starts were locally optimal in the allowed neighborhood; no
-  improvement was found. No broader global guarantee is claimed.
+For the subsequent removal of notes-generation and packaging code, syntax and
+command-line help were checked, and analysis was run against an isolated copy
+of the saved results. The three CSV tables and numerical analysis matched the
+previous exports, all twelve plots were produced, and a Markdown sentinel was
+left untouched. No full Facebook experiment or PDF generation was run.
 
-## Artifacts and provenance
+Verification used host Python 3.12.3 with the existing pinned packages in
+.venv/lib/python3.12/site-packages. The saved execution manifest retains its
+original Python 3.12.14 environment.
 
-The report includes all required tables/plots, derivations, actual commands,
-software details, raw-reference comparisons and the corrected-paper citation.
-Raw outputs and input arrays remain available under results/. The final archive
-includes the five scripts, report, dataset, reproduction instructions and results.
+## Existing execution limitations
 
-The report is generated from completed real experiments. Temporary synthetic
-integration artifacts are outside the repository and absent from the submission.
-Presentation-only changes after numerical execution are explicitly recorded in
-results/execution_provenance.json; numerical scripts and driver logic were
-verified unchanged. The final delivery hash matches the packaged source/data.
-
-See results/delivery_audit.json for artifact and extraction validation. Git history
-records final delivery; no repository visibility change or force push is needed.
+Generic worker reuse can accept short runs, and Random can mark a checkpoint
+complete before aggregate rows exist. Keep smoke/custom-budget outputs separate
+and use a fresh directory for a new full execution. Analysis checks 30-round
+all-node aggregates and all twenty Random trial lengths, and requires the 16
+saved local runs to meet their convergence criteria.

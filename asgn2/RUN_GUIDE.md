@@ -1,13 +1,20 @@
-# Run and verify the rewritten Assignment 2
+# Run experiments and prepare material for your own report
 
-This guide is for **you to execute**. The local-search rewrite has not been run,
-syntax-checked, tested, benchmarked, rendered or archive-validated by the agent.
-The checks described below are acceptance criteria, not reported successes.
+The report PDF is written manually. The Markdown notes are a fixed reference;
+check them against your own reruns. Use `analyze` for CSVs and plots only. The saved
+`results-local/` contains completed corrected-local-search experiments; the
+older `results/` contains historical PGD experiments. See RUN_STATUS.md for
+provenance and the scope of verification in the current change.
 
-The old `results/`, report PDF and ZIP remain historical artifacts. Do not submit
-them with the new scripts. The new implementation replaces Task 2 part 2's PGD;
-Task 2's fast greedy, baselines, Random and witnesses retain their algorithms.
-The shared Task 1 metadata only renames the stream-3000 description.
+To compute tables and plots from the existing saved results, after activating
+your environment:
+
+```bash
+python Assignment2_23CS10012_analysis_task4.py analyze --output results-local
+```
+
+The sections below describe an optional **new** numerical execution. Use a new
+result directory, such as `results-new`, for this source revision.
 
 ## 1. Open Ubuntu and prepare Python
 
@@ -38,7 +45,7 @@ install the matching Ubuntu Python venv package before retrying. If pip cannot
 resolve the pinned versions, stop and record the error rather than silently
 changing dependencies or substituting old experiment files.
 
-Keep the single-thread environment settings for every execution and report step.
+Keep the single-thread environment settings for every execution and analysis step.
 Record any deliberate change of Python/package versions. The new run's manifest
 records the actual software environment; old timing numbers are not predictions
 for your laptop. Dense inverses used by the other assignment tasks require
@@ -82,7 +89,7 @@ The suite now checks:
 For a code-level inspection, check the update rule in `local_search`: for the
 minimizing opinions, d=s-Pz positive selects LOW, negative selects HIGH. Each
 accepted move changes just one coordinate. Maximization uses 1-s, and the final
-reported objective is freshly solved with the original s. The report documents
+reported objective is freshly solved with the original s. The report notes explain
 why the paper's u<1 rule needs this adaptation for the assignment's u=1.
 
 ## 3. Validate the dataset and try one Task 2 case
@@ -147,11 +154,10 @@ should decrease. Both U and P are fixed seeded opinion draws, not repeated sampl
 After the small checks and smoke run pass:
 
 ```bash
-python Assignment2_23CS10012_analysis_task4.py run --output results-local
+python Assignment2_23CS10012_analysis_task4.py run --output results-new
 ```
 
-Choose an unused directory name if results-local already holds an unrelated or
-partial manually assembled run. Keep smoke-local separate. The full driver
+Choose an unused directory name; results-local already holds the saved run. Keep smoke-local separate. The full driver
 reruns the checks, Task 1, budgeted comparisons, all four local-search scenarios,
 witnesses, Task 3 and the bonus. There are 16 local-search runs in total:
 U/P x min/max x four starts.
@@ -159,15 +165,15 @@ U/P x min/max x four starts.
 Expected new result files include:
 
 ```text
-results-local/local_U_max_all.json
-results-local/local_U_min_all.json
-results-local/local_P_max_all.json
-results-local/local_P_min_all.json
-results-local/inputs.npz
-results-local/manifest.json
-results-local/commands.json
-results-local/checks/validation.json
-results-local/complete.json
+results-new/local_U_max_all.json
+results-new/local_U_min_all.json
+results-new/local_P_max_all.json
+results-new/local_P_min_all.json
+results-new/inputs.npz
+results-new/manifest.json
+results-new/commands.json
+results-new/checks/validation.json
+results-new/complete.json
 ```
 
 The final complete marker should appear only after the driver succeeds. Inspect
@@ -196,7 +202,7 @@ from scipy import sparse
 from scipy.sparse.linalg import spsolve
 from Assignment2_23CS10012_greedy_task1 import load_inputs
 
-out = Path('results-local')
+out = Path('results-new')
 ids, _, P, _, _, _ = load_inputs(Path('data/facebook_combined.txt'))
 inputs = np.load(out / 'inputs.npz')
 assert np.array_equal(ids, inputs['ids'])
@@ -260,70 +266,53 @@ For stronger full-graph history checking, independently solve each reconstructed
 trial resistance vector inside that loop and compare with h['f']; that can be
 expensive. The small-graph suite already does this for every move on its fixtures.
 
-## 6. Generate and inspect the report and archive
-
-Use the **same activated environment and thread settings** as the experiment:
+## 6. Export analysis, then write your PDF
 
 ```bash
-python Assignment2_23CS10012_analysis_task4.py report --output results-local --report Assignment2_23CS10012_report_local.pdf
-python Assignment2_23CS10012_analysis_task4.py archive --output results-local --report Assignment2_23CS10012_report_local.pdf --archive Assignment2_23CS10012_local.zip
+python Assignment2_23CS10012_analysis_task4.py analyze --output results-new
 ```
 
-The archive command itself runs checks after extraction, checks entry-point help,
-and independently solves one Facebook equilibrium. Expected terminal messages
-are `Wrote ...pdf` and `Archive extracted and validated: ...zip`.
+Expected message: `Wrote analysis tables and plots to ...`. Use the PNGs under
+`results-new/figures/` and the CSVs under `results-new/`.
 
-Open the new PDF and inspect every page. Check for clipping, unreadable tables,
-missing figures, and these content requirements:
+`Assignment2_23CS10012_report_notes.md` is a fixed reference with explanations,
+saved numerical tables, local starts, witnesses and plot guidance. Compare your
+new outputs against it yourself and use your new values in the report when they
+differ. The script does not read, generate or update that Markdown file.
+There are no `--notes`, `--report` or `--archive` options.
 
-- Task 2 part 2 explains the TA clarification, Section 6.1 method, u=1 adaptation,
-  tie handling and numerical stopping criteria; it does not present PGD as the
-  implemented method or claim convexity of the transformed objective.
-- All four profile/objective cases show all four starts and their actual values,
-  moves, statuses, error bounds and reference gaps.
-- Plot reference lines use the canonical local result. Dependent fractions and
-  comparisons use the new result directory.
-- Task 3's restricted C optima are still distinguished from all-node optima.
-- Software/seed/command information matches your execution manifest. The report
-  still reads some metadata from its rendering environment (a deferred issue),
-  hence the requirement to render in the same environment.
+Check these details before writing your final conclusions:
 
-Inspect the ZIP contents: five Python scripts, requirements, README, RUN_GUIDE,
-the **new** PDF, dataset and new results under results/. It should not contain
-old pgd_* results, the old report, a virtual environment or a second stale ZIP.
-If your submission requires the exact original PDF/ZIP names, use those names in
-the final report/archive commands only after preserving the old artifacts and
-checking the new ones. Do not upload the previous committed artifacts by mistake.
+- Task 2 part 2 describes Section 6.1 local search, the u=1 adaptation, tie
+  handling and numerical stopping criteria. It does not present PGD as the
+  implemented method or claim the transformed objective is convex.
+- Every local profile/objective case includes all four starts and their actual
+  objectives, moves, statuses, bounds and reference gaps.
+- Unbudgeted reference lines/fractions use the canonical local result.
+  Task 3's C-restricted optima remain distinct from all-node optima.
+- Software and timing descriptions use the **saved execution manifest**.
+  The fixed notes retain the earlier run's provenance; analysis.json identifies
+  the saved experiment hash and the source used for the latest analysis.
 
-## Failure handling and deferred issues
+## Failure handling and existing execution limitations
 
 | Symptom | Action |
 | --- | --- |
-| No module named resource | You are running native Windows Python; activate the Ubuntu environment. |
-| Syntax/import/check failure | Stop; preserve the full traceback. Do not proceed to Facebook runs. |
-| Local status move_limit | Inspect moves and objective history; diagnose with a higher cap in a separate directory. |
-| Local status numerically_unresolved | Inspect rejected_trials, refinement_passes and residuals. Do not label it converged or relax tolerances to force success. |
-| Large reference gap/spread | Compare all four runs, final independent solves and certificates; do not generate submission claims from that case. |
-| Source/input hash mismatch | Use a fresh output directory and rerun. Do not edit hashes to bypass the guard. |
-| Interrupted full run | Preserve logs; assess the worker files before resuming, as described below. |
-| Missing aggregate rows / report crash | Inspect Random checkpoints and worker lengths; do not change complete flags by hand. |
+| No module named resource | Use Linux/WSL Python. |
+| Syntax/import/check failure | Preserve the traceback and fix it before a full run. |
+| Local status move_limit | Inspect history; diagnose with a higher cap in a separate directory. |
+| Local status numerically_unresolved | Inspect rejected trials, refinement passes and residuals. Do not relax tolerance just to label it converged. |
+| Large reference gap/spread | Diagnose final solves before using that case in report claims. |
+| Run source hash mismatch | Use a fresh directory and rerun. Do not edit hashes to bypass the guard. |
+| Analysis source hash differs | analysis.json identifies both revisions; the tables describe the saved run. |
+| Interrupted Random run | Check all 20 trial trajectories and aggregate rows before resuming. |
 
-The four previously deferred issues are intentionally not fixed:
+Existing execution limitations remain: generic worker reuse can accept short
+runs, and Random can mark a checkpoint complete before aggregate rows exist.
+Keep smoke/custom-budget results separate from a full run and prefer a fresh
+run directory after interruption. Analysis now refuses incomplete 30-round
+all-node trajectories and missing Random trial/aggregate rows, and requires
+all 16 local runs to pass their saved convergence criteria.
 
-1. **Generic worker reuse accepts short runs.** Never run a short budget into
-   results-local or mix standalone outputs into it. For an audit, naive and
-   shortlist-fast rows should cover 10 rounds; all-node fast/I/II/Random should
-   cover 30 for U-max, P-max and U-min.
-2. **Random can mark a checkpoint complete before aggregate rows exist.** Before
-   resuming an interrupted run, inspect each Random file for both all 20 trials
-   and aggregate rows at the requested budget. The safest recovery is a fresh
-   output directory and full rerun. The new local worker only marks its own
-   result complete after all four runs pass; that does not fix other workers.
-3. **The archive validator does not prove the report file is a valid PDF.** Open
-   and inspect the generated PDF and its copy inside the ZIP yourself.
-4. **Report metadata can reflect the rendering environment.** Render immediately
-   in the same environment; compare it with manifest.json before submission.
-
-Do not expect precisely the earlier runtimes or endpoint vectors. The intended
-acceptance is a successful execution plus independently checked objectives and
-documented numerical tolerances. Keep logs/tracebacks for any failed criterion.
+Do not expect identical runtimes on a different machine. Keep logs and
+tracebacks for any failed acceptance check.
